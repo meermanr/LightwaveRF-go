@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html ng-app="link1Docs">
+
+  <head>
+    <base href="/">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightwaveRF Local API</title>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="assets/favicon/apple-touch-icon-57x57.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="60x60" href="assets/favicon/apple-touch-icon-60x60.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="72x72" href="assets/favicon/apple-touch-icon-72x72.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="76x76" href="assets/favicon/apple-touch-icon-76x76.png?v=lkkzg9444y">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-32x32.png?v=lkkzg9444y" sizes="32x32">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-96x96.png?v=lkkzg9444y" sizes="96x96">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-16x16.png?v=lkkzg9444y" sizes="16x16">
+    <link rel="manifest" href="assets/favicon/manifest.json?v=lkkzg9444y">
+    <link rel="mask-icon" href="assets/favicon/safari-pinned-tab.svg?v=lkkzg9444y" color="#5bbad5">
+    <link rel="shortcut icon" href="assets/favicon/favicon.ico?v=lkkzg9444y">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css">
+    <!-- <link rel="stylesheet" href="assets/css/stackedit.css" /> -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!--<link href="assets/css/bootstrap.cyborg.min.css" rel="stylesheet" type="text/css"/>-->
+
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script src="bower_components/jquery/dist/jquery.js" type="text/javascript"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="assets/css/main.css" />
+  </head>
+  <body>
+    <div class="container">
+
+        <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                    <a class="navbar-brand" href="/"><img style="height: 100%;" src="assets/favicon/favicon-96x96.png"></a>
+                </div>
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                  <ul class="nav navbar-nav">
+                      <li><a href="introduction_basic_comms.html">Introduction & Basic Comms</a></li>
+                      <li><a href="registration.html">Registration</a></li>
+                      <li><a href="lighting_power.html">Lighting & Power</a></li>
+                      <li><a href="events.html">Events</a></li>
+                      <li><a href="timers.html">Timers</a></li>
+                      <li><a href="energy.html">Energy</a></li>
+                      <li><a href="heating.html">Heating</a></li>
+                      <li><a href="settings.html">Settings</a></li>
+                  </ul>
+                </div><!-- /.navbar-collapse -->
+              </div><!-- /.container-fluid -->
+        </nav>
+
+      <a class="btn btn-default" href="/" style="position:fixed; top:10px; right:20px;">Home</a>
+      <!--<section class="container-fluid" ng-view=""></section>-->
+      <section class="container-fluid" style="margin-top: 50px;"><!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lightwave Link: Timers</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div class="container">
+<h1 id="timers"><i class="icon-clock"></i>Timers</h1>
+
+<p><div class="toc">
+<ul>
+<li><a href="#timers">Timers</a><ul>
+<li><a href="#timers-introduction">Timers Introduction</a></li>
+<li><a href="#example-command-structure">Example command structure</a></li>
+<li><a href="#all-timer-commands">All Timer Commands</a><ul>
+<li><a href="#duskdawn-timers">Dusk/Dawn Timers</a></li>
+</ul>
+</li>
+<li><a href="#json-outputs-timers">JSON Outputs (Timers)</a><ul>
+<li><a href="#reading-timers">Reading Timers</a></li>
+</ul>
+</li>
+<li><a href="#running-a-timer">Running a Timer</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</p>
+
+
+
+<h2 id="timers-introduction"><i class="icon-attention-alt"></i>Timers Introduction</h2>
+
+<p>A timer can be used to send a command from the WiFiLink at a predetermined time, with the option to repeat these throughout weeks or months. This is the key to automation.</p>
+
+<p>An example is ‘Wake Up’. This can happen the same time of the day, on select days of the week. <br>
+Format</p>
+
+<hr>
+
+
+
+<h2 id="example-command-structure"><i class="icon-pencil"></i>Example command structure</h2>
+
+<p><code>!FiP"20130917101257"=!R2D5F1,T07:20,S17/04/14,E20/06/16,Dmtwtfxx,Mjfmamjjasond</code></p>
+
+<p>Store timer “20130917101257” which will turn Room2 Device5 On at 7:20AM from the 17th April 2014 until 20th June 2016, Monday to Friday on every month of the year.</p>
+
+<p>To alter the repeating days and months, you modify the relevant day/month to be an ‘x’ to prevent it from running, or have the day/months initial to have it running.  <code>Mjfmxxxjasond</code> would result in the timer not running in April, May and June, for example.</p>
+
+<p><code>!FiP”&lt;TimerName&gt;”=&lt;Command&gt;,T&lt;Time&gt;,S&lt;StartDate&gt;,E&lt;EndDate&gt;,D&lt;DaysOfWeek&gt;,M&lt;MonthsOfYear&gt;</code></p>
+
+<p>The command and time are required, while all others are optional.  If they are omitted, then it assumed that StartDate = today, EndDate = forever, DaysOfWeek = every day, MonthsOfYear = every month.</p>
+
+<p>Where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>&nbsp;</th>
+  <th>&nbsp;</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td><strong>!FiP</strong></td>
+  <td>Store a time</td>
+</tr>
+<tr>
+  <td><strong>TimerName</strong></td>
+  <td>Timer name. Must be unique</td>
+</tr>
+<tr>
+  <td><strong>Command</strong></td>
+  <td>The action the timer should perform. Can be any room/device function or an Event</td>
+</tr>
+<tr>
+  <td><strong>Time</strong></td>
+  <td>Time of the day the Timer should run at in a 24hr HH:MM format</td>
+</tr>
+<tr>
+  <td><strong>StartDate</strong></td>
+  <td>The date when the timer should run from in a DD/MM/YY format</td>
+</tr>
+<tr>
+  <td><strong>EndDate</strong></td>
+  <td>The date when the timer should be automatically deleted from the Link in a DD/MM/YY format</td>
+</tr>
+<tr>
+  <td><strong>DaysOfWeek</strong></td>
+  <td>Which days the timer should run on. Should be in a mtwtfss format, with any day when the timer shouldn’t run at be replaced with an ‘x’</td>
+</tr>
+<tr>
+  <td><strong>MonthsOfYear</strong></td>
+  <td>Which months the timer should run in. Should be in a jfmamjjasond format, with any month when the timer shouldn’t run at be replaced with an ‘x’</td>
+</tr>
+</tbody></table>
+
+
+<hr>
+
+
+
+<h2 id="all-timer-commands"><i class="icon-table"></i>All Timer Commands</h2>
+
+<table>
+<thead>
+<tr>
+  <th align="left"><strong>Timer Commands</strong></th>
+  <th>&nbsp;</th>
+  <th>&nbsp;</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td align="left"><strong>Store timer</strong></td>
+  <td>!FiP</td>
+  <td><code>!FiP"20130917101257"=!R2D5F1,T07:20</code> (Create timer with ID 20130917101257 to turn Room2 Device5 On at 7.20AM every day)</td>
+</tr>
+<tr>
+  <td align="left"><strong>Delete timer</strong></td>
+  <td>!FxP</td>
+  <td><code>!FxP"20140429171955"|Deleting Timer</code> (Delete timer with the ID 20140429171955)</td>
+</tr>
+<tr>
+  <td align="left"><strong>Cancel ALL events and timers</strong></td>
+  <td>!FcP</td>
+  <td>!FcP”*”</td>
+</tr>
+<tr>
+  <td align="left"><strong>Delete ALL events and timers</strong></td>
+  <td>!FxP</td>
+  <td>!FxP”*”</td>
+</tr>
+</tbody></table>
+
+
+<hr>
+
+
+
+<h3 id="duskdawn-timers"><i class="icon-sun"></i><i class="icon-moon"></i>Dusk/Dawn Timers</h3>
+
+<p>The WiFiLink can trigger timers to occur at variable times such as dusk and dawn. To do this, the timer must be stored with a start time of:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Dawn &amp; Earlier</th>
+  <th>&nbsp;</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>96:00</td>
+  <td>Dawn Exactly</td>
+</tr>
+<tr>
+  <td>96:01</td>
+  <td>30 mins before dawn</td>
+</tr>
+<tr>
+  <td>96:02</td>
+  <td>60 mins before dawn</td>
+</tr>
+<tr>
+  <td>96:03</td>
+  <td>90 mins before dawn</td>
+</tr>
+<tr>
+  <td>96:04</td>
+  <td>120 mins before dawn</td>
+</tr>
+<tr>
+  <td><strong>Dawn &amp; Later</strong></td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>97:00</td>
+  <td>Dawn Exactly</td>
+</tr>
+<tr>
+  <td>97:01</td>
+  <td>30 mins after dawn</td>
+</tr>
+<tr>
+  <td>97:02</td>
+  <td>60 mins after dawn</td>
+</tr>
+<tr>
+  <td>97:03</td>
+  <td>90 mins after dawn</td>
+</tr>
+<tr>
+  <td>97:04</td>
+  <td>120 mins after dawn</td>
+</tr>
+<tr>
+  <td><strong>Dusk &amp; Earlier</strong></td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>98:00</td>
+  <td>Dusk Exactly</td>
+</tr>
+<tr>
+  <td>98:01</td>
+  <td>30 mins before dusk</td>
+</tr>
+<tr>
+  <td>98:02</td>
+  <td>60 mins before dusk</td>
+</tr>
+<tr>
+  <td>98:03</td>
+  <td>90 mins before dusk</td>
+</tr>
+<tr>
+  <td>98:04</td>
+  <td>120 mins before dusk</td>
+</tr>
+<tr>
+  <td><strong>Dusk &amp; Later</strong></td>
+  <td>&nbsp;</td>
+</tr>
+<tr>
+  <td>99:00</td>
+  <td>Dusk Exactly</td>
+</tr>
+<tr>
+  <td>99:01</td>
+  <td>30 mins after dusk</td>
+</tr>
+<tr>
+  <td>99:02</td>
+  <td>60 mins after dusk</td>
+</tr>
+<tr>
+  <td>99:03</td>
+  <td>90 mins after dusk</td>
+</tr>
+<tr>
+  <td>99:04</td>
+  <td>120 mins after dusk</td>
+</tr>
+</tbody></table>
+
+
+<blockquote>
+  <p><strong>Note:</strong> </p>
+  
+  <ul>
+  <li>Moods and All Off commands can be used as the action for a timer.</li>
+  <li>The timer name cannot be more than 16 characters.</li>
+  <li>The timer name must only contain alphanumeric characters.</li>
+  <li>Events and timers use the same memory and so should not have the same name.</li>
+  <li>The WiFiLink can store 32 timers in its memory.</li>
+  </ul>
+</blockquote>
+
+<hr>
+
+
+
+<h2 id="json-outputs-timers"><i class="icon-list"></i>JSON Outputs (Timers)</h2>
+
+<p>In recent versions of the Lightwave Link and WiFiLink (2.92 onwards) there have been the introduction of JSON packets in response to almost all commands.  When the Link receives the commands above, it will send an OK response initially (described in Example Interactions) and then a second packet containing information on what it has done with the Timer (i.e. create, edit or delete).</p>
+
+<p>It is also possible for the Link to be interrogated for details on the Timers it has stored in its memory.</p>
+
+<p>The format for adding, editing and deleting Timers is:</p>
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">36387</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"03:45:67"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"timer"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"create"</span>,
+    <span class="hljs-string">"name"</span>:<span class="hljs-string">"T1234567890"</span>,
+    <span class="hljs-string">"mod"</span>:<span class="hljs-number">1462462829</span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>timer</td>
+  <td>This JSON packet output relates to Events</td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>create</td>
+  <td>A Timer has been created</td>
+</tr>
+<tr>
+  <td></td>
+  <td>edit</td>
+  <td>A Time has been edited</td>
+</tr>
+<tr>
+  <td></td>
+  <td>delete</td>
+  <td>A Timer has been deleted</td>
+</tr>
+<tr>
+  <td>name</td>
+  <td>T1234567890</td>
+  <td>The ID of the stored Timer</td>
+</tr>
+<tr>
+  <td>mod</td>
+  <td>1420070400</td>
+  <td>The last time the Timer was modified in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+</tbody></table>
+
+
+<hr>
+
+
+
+<h3 id="reading-timers"><i class="icon-book"></i>Reading Timers</h3>
+
+<p>Additionally, it is also possible to obtain the current status of Timers in the Link to understand how many are currently stored, and what the IDs of them are, and what the timer is set to do.</p>
+
+<p>The Timers are stored in an internal table of 32 Timers, and you can interrogate which rows in the table have been used by sending the command <code>@T</code>.  The Link will then respond with:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">36409</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"timer"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"summary"</span>,
+    <span class="hljs-string">"stat0"</span>:<span class="hljs-number">7</span>,
+    <span class="hljs-string">"stat1"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat2"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat3"</span>:<span class="hljs-number">0</span>
+}</code></pre>
+
+<p>where the first four values are the same, and the following are:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>fn</td>
+  <td>summary</td>
+  <td>This packet is a summary of the Timer details</td>
+</tr>
+<tr>
+  <td>stat0</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 1-8</td>
+</tr>
+<tr>
+  <td>stat1</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 9-16</td>
+</tr>
+<tr>
+  <td>stat2</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 17-24</td>
+</tr>
+<tr>
+  <td>stat3</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 25-32</td>
+</tr>
+</tbody></table>
+
+
+<p>To identify which slots are used, you will need to turn the value in <code>statX</code> to a binary format, with the least significant bit (LSB) being the value at the right.</p>
+
+<p><strong>Examples:</strong> <br>
+<code>stat0</code> - <code>00000001</code> would indicate that the only timer slot in use between 1-8 would be in slot 1. <br>
+<code>stat0</code> - <code>00000011</code> would indicate that the timer slots in use between 1-8 are in slots 1 &amp; 2. <br>
+<code>stat0</code> - <code>00000100</code> would indicate that the only timer slot in use between 1-8 would be in slot 3. <br>
+<code>stat1</code> - <code>00000001</code> would indicate that the only timer slot in use between 9-16 would be in slot 9. <br>
+<code>stat2</code> - <code>00000011</code> would indicate that the timer slots in use between 17-24 are in slots 17 &amp; 18. <br>
+<code>stat3</code> - <code>10000001</code> would indicate that the timer slots in use between 25-32 are in slots 25 &amp; 32.</p>
+
+<p>For example, if the value is <code>21</code>, then this converts to binary of <code>00010101</code>,  In the case of this, the slots in use are 1, 3 and 5.  </p>
+
+<p>With this information, it is then possible to check the information of the Timers in each slot by sending <code>@?T_</code> where <code>_</code> is the number of slot you’d like to check.  <code>@?T1</code>, <code>@?T2</code>, <code>@?T3</code>…<code>@?T32</code>, for example.  The Link will then respond with:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs ruby">*!{
+    <span class="hljs-string">"trans"</span><span class="hljs-symbol">:</span><span class="hljs-number">160</span>,
+    <span class="hljs-string">"mac"</span><span class="hljs-symbol">:<span class="hljs-string">"XX:XX:XX"</span></span>,
+    <span class="hljs-string">"time"</span><span class="hljs-symbol">:</span><span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span><span class="hljs-symbol">:<span class="hljs-string">"timer"</span></span>,
+    <span class="hljs-string">"fn"</span><span class="hljs-symbol">:<span class="hljs-string">"read"</span></span>,
+    <span class="hljs-string">"slot"</span><span class="hljs-symbol">:</span><span class="hljs-number">8</span>
+    <span class="hljs-string">"name"</span><span class="hljs-symbol">:<span class="hljs-string">"T48768"</span></span>,
+    <span class="hljs-string">"clock"</span><span class="hljs-symbol">:</span><span class="hljs-number">21600</span>,       <span class="hljs-regexp">//</span><span class="hljs-constant">Only</span> <span class="hljs-keyword">if</span> timer is a set time
+    <span class="hljs-string">"dusk"</span><span class="hljs-symbol">:</span><span class="hljs-number">0</span>,            <span class="hljs-regexp">//</span><span class="hljs-constant">Only</span> <span class="hljs-keyword">if</span> timer is dusk timer
+    <span class="hljs-string">"dawn"</span><span class="hljs-symbol">:</span><span class="hljs-number">0</span>,            <span class="hljs-regexp">//</span><span class="hljs-constant">Only</span> <span class="hljs-keyword">if</span> timer is dawn timer
+    <span class="hljs-string">"start"</span><span class="hljs-symbol">:</span><span class="hljs-number">1455667200</span>,
+    <span class="hljs-string">"end"</span><span class="hljs-symbol">:</span><span class="hljs-number">4294967295</span>,
+    <span class="hljs-string">"wk"</span><span class="hljs-symbol">:</span><span class="hljs-number">31</span>,
+    <span class="hljs-string">"mth"</span><span class="hljs-symbol">:</span><span class="hljs-number">2051</span>,
+    <span class="hljs-string">"mod"</span><span class="hljs-symbol">:</span><span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"cmd"</span><span class="hljs-symbol">:<span class="hljs-string">"!R1D1F0"</span></span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>timer</td>
+  <td>This JSON packet output relates to Timers</td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>read</td>
+  <td>The Timer is being read</td>
+</tr>
+<tr>
+  <td>slot</td>
+  <td>1-32</td>
+  <td>The timer slot that is being used in the Links memory</td>
+</tr>
+<tr>
+  <td>name</td>
+  <td>T48768</td>
+  <td>The ID of the Timer. Will be unique to the Link</td>
+</tr>
+<tr>
+  <td>clock</td>
+  <td>86399</td>
+  <td><em>Not in every packet</em> The time that timer will execute at, in seconds past midnight of the Links local time.  i.e. <code>3600</code> will be 1AM, <code>41400</code> will be 11:30AM.</td>
+</tr>
+<tr>
+  <td>dusk</td>
+  <td>-4 to 4</td>
+  <td><em>Not in every packet</em> The timer will execute at dusk. The value of this field indicates if it is set to run at dusk, or however many 30min increments before/after dusk. <code>-4</code> indicates 2hrs before dusk.  <code>1</code> indicates 30mins after dusk. <code>0</code> indicates dusk exactly</td>
+</tr>
+<tr>
+  <td>dawn</td>
+  <td>-4 to 4</td>
+  <td><em>Not in every packet</em> The timer will execute at dawn. The value of this field indicates if it is set to run at dawn, or however many 30min increments before/after dawn. <code>-2</code> indicates 1hr before dawn.  <code>3</code> indicates 1hr30mins after dawn. <code>0</code> indicates dawn exactly</td>
+</tr>
+<tr>
+  <td>start</td>
+  <td>1420070400</td>
+  <td>The timestamp from when the timer will begin to run at (i.e. Start date)</td>
+</tr>
+<tr>
+  <td>end</td>
+  <td>1500070400</td>
+  <td>The timestamp from when the timer will stop running at (i.e End date)</td>
+</tr>
+<tr>
+  <td>wk</td>
+  <td>0 to 127</td>
+  <td>Convert this to binary to find out which slots are in use for days 1-7. <code>58</code> would be <code>0111010</code>. This would imply Mon = 0, Tue = 1, Wed = 0, Thu = 1, Fri = 1, Sat = 1, Sun = 1</td>
+</tr>
+<tr>
+  <td>mth</td>
+  <td>0 to 4095</td>
+  <td>Convert this to binary to find out which slots are in use for months 1-12. <code>1988</code> would be <code>011111000100</code>. This would imply Jan = 0, Feb = 0, Mar = 1, Apr = 0, May = 0, Jun = 0, Jul = 1, Aug = 1, Sep = 1, Oct = 1, Nov = 1, Dec = 0</td>
+</tr>
+<tr>
+  <td>mod</td>
+  <td>1420070400</td>
+  <td>The last time the Timer was modified. The client may have a record of the Timer, but it may have been modified on the Link via another client more recently</td>
+</tr>
+<tr>
+  <td>cmd</td>
+  <td>!R1D1F0</td>
+  <td>The command that the timer will send out when it is scheduled to run</td>
+</tr>
+</tbody></table>
+
+
+<p>If you check a slot which has no Timer stored in it using <code>@?T_</code>, then the Link will then respond with:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs vbscript"><span class="hljs-number">123</span>,<span class="hljs-built_in">ERR</span>,<span class="hljs-number">5</span>,<span class="hljs-string">"Slot is empty"</span></code></pre>
+
+<p>for example:</p>
+
+
+
+<div class="sequence-diagram"><svg height="220" version="1.1" width="275.62499713897705" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="overflow: hidden; position: relative; top: 0.299988px;"><desc>Created with Raphaël 2.1.2</desc><defs><path stroke-linecap="round" d="M5,0 0,2.5 5,5z" id="raphael-marker-block"></path><marker id="raphael-marker-endblock55-obj20" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj23" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker></defs><rect x="10" y="20" width="59.266666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="30" width="39.266666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.63333320617676" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><rect x="10" y="160" width="59.266666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="170" width="39.266666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.63333320617676" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><path style="" fill="none" stroke="#000000" d="M39.63333320617676,60L39.63333320617676,160" stroke-width="2"></path><rect x="196.54166316986084" y="20" width="49.08333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="206.54165649414062" y="30" width="29.08333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="221.08333015441895" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><rect x="196.54166316986084" y="160" width="49.08333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="206.54165649414062" y="170" width="29.08333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="221.08333015441895" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><path style="" fill="none" stroke="#000000" d="M221.08333015441895,60L221.08333015441895,160" stroke-width="2"></path><rect x="95.0666732788086" y="75" width="70.58333587646484" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="130.35833168029785" y="85" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,@?T10</tspan></text><path style="" fill="none" stroke="#000000" d="M39.63333320617676,100C39.63333320617676,100,186.8950304655409,100,216.0885114652,100" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj20)" stroke-dasharray="0"></path><rect x="49.633338928222656" y="115" width="161.4499969482422" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="130.35833168029785" y="125" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,ERR,5,"Slot is empty"</tspan></text><path style="" fill="none" stroke="#000000" d="M221.08333015441895,140C221.08333015441895,140,73.82163289505479,140,44.62815189539569,140" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj23)" stroke-dasharray="0"></path></svg></div>
+
+
+
+<h2 id="running-a-timer"><i class="icon-fast-fw"></i>Running a Timer</h2>
+
+<p>When a timer runs by itself, it will output a packet which can alert a client that it has ran:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">36387</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"03:45:67"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"timer"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"trigger"</span>,
+    <span class="hljs-string">"name"</span>:<span class="hljs-string">"T001"</span>
+}</code></pre>
+
+<p>The outputs are mostly the same as a timer <code>create</code>, <code>read</code> or <code>delete</code>, but the <code>fn</code> is simply <code>trigger</code> to alert the client that the timer has triggered, together with the name of the timer.</p>
+
+<p><em>Last updated 29/12/16</em></p></section>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $('.toc a').click(function(e){
+                e.preventDefault();
+                var anc = $(this).attr('href');
+                location.hash = anc;
+            });
+        });
+    </script>
+
+  </body>
+</html>

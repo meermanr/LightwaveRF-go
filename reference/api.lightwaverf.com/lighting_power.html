@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html ng-app="link1Docs">
+
+  <head>
+    <base href="/">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightwaveRF Local API</title>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="assets/favicon/apple-touch-icon-57x57.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="60x60" href="assets/favicon/apple-touch-icon-60x60.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="72x72" href="assets/favicon/apple-touch-icon-72x72.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="76x76" href="assets/favicon/apple-touch-icon-76x76.png?v=lkkzg9444y">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-32x32.png?v=lkkzg9444y" sizes="32x32">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-96x96.png?v=lkkzg9444y" sizes="96x96">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-16x16.png?v=lkkzg9444y" sizes="16x16">
+    <link rel="manifest" href="assets/favicon/manifest.json?v=lkkzg9444y">
+    <link rel="mask-icon" href="assets/favicon/safari-pinned-tab.svg?v=lkkzg9444y" color="#5bbad5">
+    <link rel="shortcut icon" href="assets/favicon/favicon.ico?v=lkkzg9444y">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css">
+    <!-- <link rel="stylesheet" href="assets/css/stackedit.css" /> -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!--<link href="assets/css/bootstrap.cyborg.min.css" rel="stylesheet" type="text/css"/>-->
+
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script src="bower_components/jquery/dist/jquery.js" type="text/javascript"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="assets/css/main.css" />
+  </head>
+  <body>
+    <div class="container">
+
+        <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                    <a class="navbar-brand" href="/"><img style="height: 100%;" src="assets/favicon/favicon-96x96.png"></a>
+                </div>
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                  <ul class="nav navbar-nav">
+                      <li><a href="introduction_basic_comms.html">Introduction & Basic Comms</a></li>
+                      <li><a href="registration.html">Registration</a></li>
+                      <li><a href="lighting_power.html">Lighting & Power</a></li>
+                      <li><a href="events.html">Events</a></li>
+                      <li><a href="timers.html">Timers</a></li>
+                      <li><a href="energy.html">Energy</a></li>
+                      <li><a href="heating.html">Heating</a></li>
+                      <li><a href="settings.html">Settings</a></li>
+                  </ul>
+                </div><!-- /.navbar-collapse -->
+              </div><!-- /.container-fluid -->
+        </nav>
+
+      <a class="btn btn-default" href="/" style="position:fixed; top:10px; right:20px;">Home</a>
+      <!--<section class="container-fluid" ng-view=""></section>-->
+      <section class="container-fluid" style="margin-top: 50px;"><!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lightwave Link: Power &amp;Lighting Functions</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div class="container">
+<h1 id="power-lighting-device-functions"><i class="icon-off"></i>Power &amp; Lighting Device Functions</h1>
+
+<p><div class="toc">
+<ul>
+<li><a href="#power-lighting-device-functions">Power &amp; Lighting Device Functions</a><ul>
+<li><a href="#onoff">On/Off</a></li>
+<li><a href="#dimming">Dimming</a></li>
+<li><a href="#openclose">Open/Close</a></li>
+<li><a href="#colour-changing-leds">Colour Changing LEDs</a></li>
+<li><a href="#locking">Locking</a></li>
+<li><a href="#overview-of-basic-commands-for-devices">Overview of Basic Commands for Devices</a></li>
+<li><a href="#json-outputs-devices">JSON Outputs (Devices)</a></li>
+</ul>
+</li>
+<li><a href="#room-functions">Room Functions</a><ul>
+<li><a href="#moods-introduction">Moods Introduction</a><ul>
+<li><a href="#storing-a-mood">Storing a Mood</a></li>
+<li><a href="#recalling-a-mood">Recalling a Mood</a></li>
+</ul>
+</li>
+<li><a href="#all-off">All Off</a><ul>
+<li><a href="#basic-overview-for-rooms">Basic Overview for Rooms</a></li>
+</ul>
+</li>
+<li><a href="#json-outputs-rooms">JSON Outputs (Rooms)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</p>
+
+<hr>
+
+
+
+<h2 id="onoff"><i class="icon-off"></i>On/Off</h2>
+
+<p>The most basic commands for devices are <code>F1</code> (ON) and <code>F0</code> (OFF). If <code>F1</code> is sent to a dimmer device, that device will go to its previous light level. If the device is already on, will remain at its existing light level. If <code>F1</code> is sent to an open/close device, that device will go to the open position. If <code>F0</code> is sent to an open/close device, that device will go to the close position.</p>
+
+<hr>
+
+
+
+<h2 id="dimming"><i class="icon-signal"></i>Dimming</h2>
+
+<p>Dimming can be done in increments of 32 steps from and including 1 to 32. 1 will result in the minimum brightness of a dimmer device and 32 resulting in full brightness.  The commands are <code>FdP</code>, followed by the dim level you are looking for.</p>
+
+<hr>
+
+
+
+<h2 id="openclose"><i class="icon-upload"></i><i class="icon-download"></i>Open/Close</h2>
+
+<p>Open and Close commands can be sent to the JSJSLW821 (500W relay) only. Dimmer and on/off devices will ignore any open, stop or close commands.  The commands are <code>F(</code> for open, <code>F)</code> for close and <code>F^</code> for stop.</p>
+
+<hr>
+
+
+
+<h2 id="colour-changing-leds"><i class="icon-tint"></i>Colour Changing LEDs</h2>
+
+<p>LightwaveRF LED colour changing products will respond to the above on/off and dim commands to handle light output control, but also have the ability to change the colour output, as well as having the functionality to cycle through the colours the device supports.</p>
+
+<p>The command to change the device to a colour is <code>F*cP</code> followed by an integer between 1 and 20 depending on the desired colour (see table below).  For example, <code>!R1D1F*cP10</code> would send Room 1 Device 1 to go to Middle Orange.</p>
+
+<table>
+<thead>
+<tr>
+  <th>Code</th>
+  <th>Colour</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>1</td>
+  <td>White</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>Green White</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>Red White</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>Yellow White</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>Red</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>Middle Red</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>Pink</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>Light Red</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>Orange</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td>Middle Orange</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td>Green White</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td>Light Orange</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td>Green</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td>Middle Green</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td>Light Yellow Green</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td>Yellow Green</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td>Blue</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td>Water Blue</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td>Light Blue</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td>White Blue</td>
+</tr>
+</tbody></table>
+
+
+<p>The colour changing products have the ability to cycle between the colours in 4 modes:</p>
+
+<p>1) Between current colour palette (White, Red, Orange, Green, Blue) - Fast <br>
+2) Between current colour palette (White, Red, Orange, Green, Blue) - Slow <br>
+3) Between all colour palettes - Fast <br>
+4) Between all colour palettes - Slow</p>
+
+<p>It is not possible to choose which cycling mode to use.  Each additional transmission of the cycle command will move onto the next mode.</p>
+
+<p>To make the device move to the next cycle, the command to send is <code>F*y</code>, for example <code>!R3D2F*y</code>.</p>
+
+<hr>
+
+
+
+<h2 id="locking"><i class="icon-lock"></i>Locking</h2>
+
+<p>LightwaveRF lighting and power products can be locked on or off. The exception is the JSJSLW381 (promo socket)*. The WiFiLink can send two types of lock commands, plus unlock:</p>
+
+<p><strong>Partial Lock</strong> - Devices cannot be switched manually but can be from an RF device (such as the WiFiLink, remote control, PIR etc).  Send <code>Fl</code> for this.</p>
+
+<p><strong>Full Lock</strong> - Devices cannot be switched either manually nor from an RF command until unlocked. Send <code>Fk</code> for this.</p>
+
+<p><strong>Unlock</strong> - Devices which were previously locked will now be able to be controlled. Send <code>Fu</code> for this.</p>
+
+<blockquote>
+  <p><strong>Note</strong> The LightwaveRF Dimmer products will still turn on for <strong>5 minutes</strong> when they are locked off.  After the 5 minutes has elapsed, this will revert back to off.  This is a safety feature to allow a user to have light in an emergency, such as a house fire in the middle of the night.</p>
+</blockquote>
+
+<h2 id="overview-of-basic-commands-for-devices"><i class="icon-table"></i>Overview of Basic Commands for Devices</h2>
+
+<p>“Normal” commands :</p>
+
+<table>
+<thead>
+<tr>
+  <th>Command</th>
+  <th>Operator</th>
+  <th align="left">Example</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>Turn On Room 1 Device 1</td>
+  <td>F1</td>
+  <td align="left">!R1D1F1</td>
+</tr>
+<tr>
+  <td>Turn Off Room 1 Device 2</td>
+  <td>F0</td>
+  <td align="left">!R1D2F0</td>
+</tr>
+<tr>
+  <td>Dim Room 1 Device 3 (Dim levels 1-32)</td>
+  <td>FdP</td>
+  <td align="left">!R1D3FdP32 (100%)</td>
+</tr>
+<tr>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td align="left">!R1D3FdP16 (50%)</td>
+</tr>
+<tr>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td align="left">!R1D3FdP3 (10% approx)</td>
+</tr>
+<tr>
+  <td>Open Room 2 Device 4</td>
+  <td>F(</td>
+  <td align="left">!R2D4F(</td>
+</tr>
+<tr>
+  <td>Stop Room 2 Device 5</td>
+  <td>F^</td>
+  <td align="left">!R2D5F^</td>
+</tr>
+<tr>
+  <td>Close Room 2 Device 6</td>
+  <td>F)</td>
+  <td align="left">!R2D6F)</td>
+</tr>
+<tr>
+  <td>Partially Lock Room 3 Device 7</td>
+  <td>Fl</td>
+  <td align="left">!R3D7Fl</td>
+</tr>
+<tr>
+  <td>Fully Lock Room 3 Device 8</td>
+  <td>Fk</td>
+  <td align="left">!R3D8Fk</td>
+</tr>
+<tr>
+  <td>Unlock Room 3 Device 9</td>
+  <td>Fu</td>
+  <td align="left">!R3D9Fu</td>
+</tr>
+<tr>
+  <td>Set Colour Room 4 Device 10</td>
+  <td>F*cP</td>
+  <td align="left">!R4D10F*cP2</td>
+</tr>
+<tr>
+  <td>Change Cycling of Room 4 Device 11</td>
+  <td>F*y</td>
+  <td align="left">!R4D10F*y</td>
+</tr>
+</tbody></table>
+
+
+<hr>
+
+
+
+<h2 id="json-outputs-devices"><i class="icon-list"></i>JSON Outputs (Devices)</h2>
+
+<p>In recent versions of the Lightwave Link and WiFiLink (2.92 onwards) there have been the introduction of JSON packets in response to almost all commands.  When the Link receives the commands above, it will send an OK response initially (described in Example Interactions) and then a second packet containing information on what radio it has transmitted.</p>
+
+<p>It is also possible for the Link to transmit radio of its own accord through timers and events, or from other clients or in response to server commands.</p>
+
+<p>The format for the power and device transmits will look like:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"03:45:67"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"433T"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"dim"</span>,
+    <span class="hljs-string">"room"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"dev"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"param"</span>:<span class="hljs-number">16</span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>433T</td>
+  <td>This JSON packet output is a result of a 433MHz transmission</td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>on</td>
+  <td>The radio output is sending function “On”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>off</td>
+  <td>The radio output is sending function “Off”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>dim</td>
+  <td>The radio output is sending function “Dim”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>fullLock</td>
+  <td>The radio output is sending function “Full Lock”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>manualLock</td>
+  <td>The radio output is sending function “Manual Lock”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>unlock</td>
+  <td>The radio output is sending function “Unlock”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>open</td>
+  <td>The radio output is sending function “Open”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>close</td>
+  <td>The radio output is sending function “Close”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>stop</td>
+  <td>The radio output is sending function “Stop”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>ledColour</td>
+  <td>The radio output is sending function “Colour Change”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>ledColourCycle</td>
+  <td>The radio output is sending function “Change Colour Cycle”</td>
+</tr>
+<tr>
+  <td>room</td>
+  <td>1-15</td>
+  <td>The room number that the command was sent to</td>
+</tr>
+<tr>
+  <td>dev</td>
+  <td>1-16</td>
+  <td>The device number that the command was sent to</td>
+</tr>
+<tr>
+  <td>param</td>
+  <td>1-32</td>
+  <td><em>Not in every packet</em>.  The parameter for the function, if the function requires a parameter (i.e. dim)</td>
+</tr>
+</tbody></table>
+
+
+<hr>
+
+
+
+<h1 id="room-functions"><i class="icon-home"></i>Room Functions</h1>
+
+
+
+<h2 id="moods-introduction"><i class="icon-smile"></i><i class="icon-frown"></i>Moods Introduction</h2>
+
+<p>Moods are pre-set statuses LightwaveRF power and lighting devices can retain in their memory. The exception is with the JSJSLW381 (promo socket)*. The status can be recalled at a later point for all devices in a room. Recalling the mood will alter the status of every device in the room concurrently. This will change the status of all devices in a room with one command.</p>
+
+<p>*correct as of Q1 2016</p>
+
+<p>It is important to note that it is the devices and not the WiFiLink which retains the mood information. The devices simply follow the command to go to their preset mood, no matter which RF device is sending the command.</p>
+
+<p>The devices have 3 ‘standard’ mood memory slots. These correspond with the JSJSLW101 (Master Mood Switch), the JSJSLW104 (Mood Remote) and the JSJSLW100 (Handheld Remote) products’ buttons which have 1, 2 or 3 dots denoting their mood commands.</p>
+
+<p>In addition there are two further slots. These are recommended to be used as ‘Entry and Exit’ moods. This relates to the JSJSLW101 (Master Mood Switch) which can be setup to use Moods 4 and 5 for moods when the user enters or exits a room. When a user enters a room, they may want certain devices to switch on or off, while when they exit a room they may want certain devices to switch off while some devices remain on.</p>
+
+<hr>
+
+
+
+<h3 id="storing-a-mood"><i class="icon-smile"></i>Storing a Mood</h3>
+
+<p><code>FsP1</code> will store the current status all devices within a room are in as their Mood 1.</p>
+
+<p>The user should be directed to first place their devices into the statuses they desire and before sending this command.</p>
+
+<p><code>FsP1 - Store statuses as Mood 1</code> <br>
+<code>FsP2 - Store statuses as Mood 2</code> <br>
+<code>FsP3 - Store statuses as Mood 3</code> <br>
+<code>FsP4 - Store statuses as Entry Mood</code> <br>
+<code>FsP5 - Store statuses as Exit Mood</code></p>
+
+<hr>
+
+
+
+<h3 id="recalling-a-mood"><i class="icon-smile"></i>Recalling a Mood</h3>
+
+<p><code>FmP2</code> will recall all devices in a room to their previously stored Mood 2.</p>
+
+<p>If a device does not have anything stored in its memory slot for Mood 2 then it will ignore this command and remain in its previous state.</p>
+
+<p><code>FmP1 - Recall Mood 1</code> <br>
+<code>FmP2 - Recall Mood 2</code> <br>
+<code>FmP3 - Recall Mood 3</code> <br>
+<code>FmP4 - Recall Entry Mood</code> <br>
+<code>FmP5 - Recall Exit Mood</code></p>
+
+<hr>
+
+
+
+<h2 id="all-off"><i class="icon-off"></i>All Off</h2>
+
+<p>This will turn all LightwaveRF devices within a room off.</p>
+
+<p><code>!R1Fa - Turn All Devices in Room1 Off</code></p>
+
+<hr>
+
+
+
+<h3 id="basic-overview-for-rooms"><i class="icon-table"></i>Basic Overview for Rooms</h3>
+
+<p>Command List :</p>
+
+<table>
+<thead>
+<tr>
+  <th>Command</th>
+  <th>Operator</th>
+  <th align="left">Example</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>Save Mood 1 in Room 10</td>
+  <td>FsP1</td>
+  <td align="left">!R10FsP1</td>
+</tr>
+<tr>
+  <td>Recall Mood 2 in Room 11</td>
+  <td>FmP2</td>
+  <td align="left">!R11FmP2</td>
+</tr>
+<tr>
+  <td>Turn Everything Off in Room 12</td>
+  <td>Fa</td>
+  <td align="left">!R12Fa</td>
+</tr>
+</tbody></table>
+
+
+<hr>
+
+
+
+<h2 id="json-outputs-rooms"><i class="icon-list"></i>JSON Outputs (Rooms)</h2>
+
+<p>In recent versions of the Lightwave Link and WiFiLink (2.92 onwards) there have been the introduction of JSON packets in response to almost all commands.  When the Link receives the commands above, it will send an OK response initially (described in Example Interactions) and then a second packet containing information on what radio it has transmitted.</p>
+
+<p>It is also possible for the Link to transmit radio of its own accord through timers and events, or from other clients or in response to server commands.</p>
+
+<p>The format for the room control transmits will look like:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">36341</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"03:45:67"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"433T"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"moodRecall"</span>,
+    <span class="hljs-string">"param"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"room"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"dev"</span>:<span class="hljs-number">16</span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>433T</td>
+  <td>This JSON packet output is a result of a 433MHz transmission</td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>allOff</td>
+  <td>The radio output is sending function “All Off”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>moodStore</td>
+  <td>The radio output is sending function “Store Mood”</td>
+</tr>
+<tr>
+  <td></td>
+  <td>moodRecall</td>
+  <td>The radio output is sending function “Dim”</td>
+</tr>
+<tr>
+  <td>room</td>
+  <td>1-15</td>
+  <td>The room number that the command was sent to</td>
+</tr>
+<tr>
+  <td>dev</td>
+  <td>1-16</td>
+  <td>Though a number will be output, it is irrelevant in any room commands, as all devices will respond</td>
+</tr>
+<tr>
+  <td>param</td>
+  <td>1-5</td>
+  <td><em>Not in All Off</em>.  The parameter for the function for moods. i.e. Mood 1, 2, 3 etc</td>
+</tr>
+</tbody></table>
+
+
+<p><em>Last updated 21/12/16</em></p></section>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $('.toc a').click(function(e){
+                e.preventDefault();
+                var anc = $(this).attr('href');
+                location.hash = anc;
+            });
+        });
+    </script>
+
+  </body>
+</html>

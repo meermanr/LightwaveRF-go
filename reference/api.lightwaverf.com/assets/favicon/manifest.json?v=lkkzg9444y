@@ -1,0 +1,29 @@
+{
+	"name": "WebManager",
+	"icons": [
+		{
+			"src": "\/android-chrome-36x36.png?v=lkkzg9444E",
+			"sizes": "36x36",
+			"type": "image\/png",
+			"density": 0.75
+		},
+		{
+			"src": "\/android-chrome-48x48.png?v=lkkzg9444E",
+			"sizes": "48x48",
+			"type": "image\/png",
+			"density": 1
+		},
+		{
+			"src": "\/android-chrome-72x72.png?v=lkkzg9444E",
+			"sizes": "72x72",
+			"type": "image\/png",
+			"density": 1.5
+		},
+		{
+			"src": "\/android-chrome-96x96.png?v=lkkzg9444E",
+			"sizes": "96x96",
+			"type": "image\/png",
+			"density": 2
+		}
+	]
+}

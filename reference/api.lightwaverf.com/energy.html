@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html ng-app="link1Docs">
+
+  <head>
+    <base href="/">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightwaveRF Local API</title>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="assets/favicon/apple-touch-icon-57x57.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="60x60" href="assets/favicon/apple-touch-icon-60x60.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="72x72" href="assets/favicon/apple-touch-icon-72x72.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="76x76" href="assets/favicon/apple-touch-icon-76x76.png?v=lkkzg9444y">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-32x32.png?v=lkkzg9444y" sizes="32x32">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-96x96.png?v=lkkzg9444y" sizes="96x96">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-16x16.png?v=lkkzg9444y" sizes="16x16">
+    <link rel="manifest" href="assets/favicon/manifest.json?v=lkkzg9444y">
+    <link rel="mask-icon" href="assets/favicon/safari-pinned-tab.svg?v=lkkzg9444y" color="#5bbad5">
+    <link rel="shortcut icon" href="assets/favicon/favicon.ico?v=lkkzg9444y">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css">
+    <!-- <link rel="stylesheet" href="assets/css/stackedit.css" /> -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!--<link href="assets/css/bootstrap.cyborg.min.css" rel="stylesheet" type="text/css"/>-->
+
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script src="bower_components/jquery/dist/jquery.js" type="text/javascript"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="assets/css/main.css" />
+  </head>
+  <body>
+    <div class="container">
+
+        <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                    <a class="navbar-brand" href="/"><img style="height: 100%;" src="assets/favicon/favicon-96x96.png"></a>
+                </div>
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                  <ul class="nav navbar-nav">
+                      <li><a href="introduction_basic_comms.html">Introduction & Basic Comms</a></li>
+                      <li><a href="registration.html">Registration</a></li>
+                      <li><a href="lighting_power.html">Lighting & Power</a></li>
+                      <li><a href="events.html">Events</a></li>
+                      <li><a href="timers.html">Timers</a></li>
+                      <li><a href="energy.html">Energy</a></li>
+                      <li><a href="heating.html">Heating</a></li>
+                      <li><a href="settings.html">Settings</a></li>
+                  </ul>
+                </div><!-- /.navbar-collapse -->
+              </div><!-- /.container-fluid -->
+        </nav>
+
+      <a class="btn btn-default" href="/" style="position:fixed; top:10px; right:20px;">Home</a>
+      <!--<section class="container-fluid" ng-view=""></section>-->
+      <section class="container-fluid" style="margin-top: 50px;"><!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lightwave Link: Energy</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div class="container">
+<h1 id="energy"><i class="icon-off"></i>Energy</h1>
+
+<p><div class="toc">
+<ul>
+<li><a href="#energy">Energy</a><ul>
+<li><ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#linking">Linking</a></li>
+<li><a href="#unlinking">Unlinking</a></li>
+<li><a href="#communication">Communication</a></li>
+<li><a href="#reading-energy-devices">Reading Energy Devices</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</p>
+
+<h2 id="overview"><i class="icon-eye"></i>Overview</h2>
+
+<p>The Link supports an Energy Monitor device (LW600) which is able to output the current energy readings from the live feed it is clamped around and communicate this to the Link.  The Energy Monitor is the only LightwaveRF peripheral which is able to link to the Lightwave Link and but not receive RF communication.  It is a unidirectional device but in an opposite way from the lighting and power products in that it can transmit RF but is unable to receive RF.</p>
+
+<p>The Energy Monitor outputs its readings every 15 seconds to the Link. The Link will output this information as a broadcast when received and contains two values.  The current use, which is the average energy consumption in a <strong>watts</strong> over the previous 15 seconds, and the total use today, which is the total energy used since midnight of the Links time in <strong>watt-hours</strong>.</p>
+
+<p>The current usage will average the information </p>
+
+<h2 id="linking"><i class="icon-link"></i>Linking</h2>
+
+<p>Linking a heating/energy device is done differently from the linking of a lighting power device.  The heating/energy devices have linking information stored in themselves, as well as the Link storing information about the devices product type and serial.</p>
+
+<p>The Link is able to connect to up to 8 energy devices, though it shares the same space with heating devices, so if there many heating devices linked, this number will be fewer if over 72 heating devices have been added</p>
+
+<p>To link an Energy Monitor, the Link must first enter linking mode.  To send the Link into linking mode, the client should choose the appropriate slot number they want to assign to the device (1 to 80) and send the below command:</p>
+
+<pre class="prettyprint"><code class=" hljs diff"><span class="hljs-change">!R_F*L</span></code></pre>
+
+<p>where <code>_</code> is the slot number chosen.  </p>
+
+<blockquote>
+  <p><strong>Note</strong> <br>
+  Despite the command beginning with R, this is not related to lighting/power/moods or any room control.  Linking a device to R1, then sending !R1Fa (Room 1 All Off) would <strong>not</strong> affect the Energy Monitor</p>
+</blockquote>
+
+<p>Once the command has been sent and the Link has given the OK response, then the user would be able to place their peripheral into linking mode for it to connect to the Link.  A successful link will have the Link output:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">123</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"868R"</span>,
+    <span class="hljs-string">"prod"</span>:<span class="hljs-string">"pwrMtr"</span>,
+    <span class="hljs-string">"serial"</span>:<span class="hljs-string">"ABC123"</span>,
+    <span class="hljs-string">"type"</span>:<span class="hljs-string">"link"</span>,
+    <span class="hljs-string">"room"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"pairType"</span>:<span class="hljs-string">"product"</span>,
+    <span class="hljs-string">"class"</span>:<span class="hljs-string">""</span>,
+    <span class="hljs-string">"msg"</span>:<span class="hljs-string">"success"</span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>868R</td>
+  <td>This communication is a result of 868MHz radio being received)</td>
+</tr>
+<tr>
+  <td>prod</td>
+  <td>pwrMtr</td>
+  <td>The type of product that has been added is an Energy Monitor (pwrMtr = Power Meter)</td>
+</tr>
+<tr>
+  <td>serial</td>
+  <td>ABC123</td>
+  <td>The serial number of the product which has been added</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>link</td>
+  <td>The type of packet the Lightwave Link is sending is a “link” packet</td>
+</tr>
+<tr>
+  <td>room</td>
+  <td>0-80</td>
+  <td>The slot number which the device has been added to</td>
+</tr>
+<tr>
+  <td>pairType</td>
+  <td>product</td>
+  <td>This link packet is referencing the addition of a new product (as opposed to a local phone/tablet/PC)</td>
+</tr>
+<tr>
+  <td>class</td>
+  <td>n/a</td>
+  <td>unused</td>
+</tr>
+<tr>
+  <td>msg</td>
+  <td>success</td>
+  <td>The linking has been successful</td>
+</tr>
+</tbody></table>
+
+
+
+
+<h2 id="unlinking"><i class="icon-scissors"></i>Unlinking</h2>
+
+<p>To remove a previously added heating/energy device, the process is similar to linking.</p>
+
+<p>To unlink a device, the client should choose the appropriate slot number they want to remove from the Link (1 to 80) and send the below command:</p>
+
+<pre class="prettyprint"><code class=" hljs diff"><span class="hljs-change">!R_F*xU</span></code></pre>
+
+<p>where <code>_</code> is the slot number chosen.</p>
+
+<p>The peripheral does not need to be placed into linking mode for this as the Link unit will remove the pairing in itself and will no longer output any data the peripheral broadcasts out.</p>
+
+<p>A successful unlink will have the Link output:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">123</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"868R"</span>,
+    <span class="hljs-string">"type"</span>:<span class="hljs-string">"unlink"</span>,
+    <span class="hljs-string">"room"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"pairType"</span>:<span class="hljs-string">"product"</span>,
+    <span class="hljs-string">"class"</span>:<span class="hljs-string">""</span>,
+    <span class="hljs-string">"msg"</span>:<span class="hljs-string">"success"</span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>868R</td>
+  <td>This communication is a result of 868MHz radio being received (in this instance, this is incorrect)</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>unlink</td>
+  <td>The type of packet the Lightwave Link is sending is an “unlink” packet</td>
+</tr>
+<tr>
+  <td>room</td>
+  <td>0-80</td>
+  <td>The slot number which the device has been added to</td>
+</tr>
+<tr>
+  <td>pairType</td>
+  <td>product</td>
+  <td>This unlink packet is referencing a product which is being removed</td>
+</tr>
+<tr>
+  <td>class</td>
+  <td>n/a</td>
+  <td>unused</td>
+</tr>
+<tr>
+  <td>msg</td>
+  <td>success</td>
+  <td>The unlinking has been successful</td>
+</tr>
+</tbody></table>
+
+
+
+
+<h2 id="communication"><i class="icon-exchange"></i>Communication</h2>
+
+<p>Every time the Link receives a communication from an Energy Monitor, the Link will output the following JSON:</p>
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">528</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1480314257</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"868R"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"meterData"</span>,
+    <span class="hljs-string">"prod"</span>:<span class="hljs-string">"pwrMtr"</span>,
+    <span class="hljs-string">"serial"</span>:<span class="hljs-string">"ABC123"</span>,
+    <span class="hljs-string">"type"</span>:<span class="hljs-string">"energy"</span>,
+    <span class="hljs-string">"cUse"</span>:<span class="hljs-number">276</span>,
+    <span class="hljs-string">"todUse"</span>:<span class="hljs-number">324</span>
+}</code></pre>
+
+<p>where the first three values are the same as other packets, and the following are:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>pkt</td>
+  <td>868R</td>
+  <td>This packet details radio received from an 868MHz device</td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>meterData</td>
+  <td>This packet is a contains data from an energy meter</td>
+</tr>
+<tr>
+  <td>prod</td>
+  <td>pwrMtr</td>
+  <td>The product which is outputting the radio is an Energy Monitor</td>
+</tr>
+<tr>
+  <td>serial</td>
+  <td><code>ABC123</code></td>
+  <td>The serial number of the device which is outputting radio</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td><code>energy</code></td>
+  <td>The packet contains energy information</td>
+</tr>
+<tr>
+  <td>cUse</td>
+  <td><code>123</code></td>
+  <td>The current use that the Energy Monitor is detecting in Watts</td>
+</tr>
+<tr>
+  <td>todUse</td>
+  <td><code>1002</code></td>
+  <td>The Todays Usage.  This is the amount of usage that has been detected all day in Watt-Hours</td>
+</tr>
+</tbody></table>
+
+
+
+
+<h2 id="reading-energy-devices"><i class="icon-book"></i>Reading Energy Devices</h2>
+
+<p>Additionally, it is also possible to obtain the current record for the devices stored in the Link to understand how many are currently stored, and what the IDs of them are, and what type of device is stored in each slot.  This is only for heating and energy devices.</p>
+
+<p>The devices are stored in an internal table of 80 rows, and you can interrogate which rows in the table have been used by sending the command <code>@R</code>.  The Link will then respond with:</p>
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">36409</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"room"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"summary"</span>,
+    <span class="hljs-string">"stat0"</span>:<span class="hljs-number">7</span>,
+    <span class="hljs-string">"stat1"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat2"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat3"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat4"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat5"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat6"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat7"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat8"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat9"</span>:<span class="hljs-number">0</span>
+}</code></pre>
+
+<p>where the first three values are the same, and the following are:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>pkt</td>
+  <td>room</td>
+  <td></td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>summary</td>
+  <td>This packet is a summary of the Room details</td>
+</tr>
+<tr>
+  <td>stat0</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 1-8</td>
+</tr>
+<tr>
+  <td>stat1</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 9-16</td>
+</tr>
+<tr>
+  <td>stat2</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 17-24</td>
+</tr>
+<tr>
+  <td>stat3</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 25-32</td>
+</tr>
+<tr>
+  <td>stat4</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 33-40</td>
+</tr>
+<tr>
+  <td>stat5</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 41-48</td>
+</tr>
+<tr>
+  <td>stat6</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 49-56</td>
+</tr>
+<tr>
+  <td>stat7</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 57-64</td>
+</tr>
+<tr>
+  <td>stat8</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 65-72</td>
+</tr>
+<tr>
+  <td>stat9</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 73-80</td>
+</tr>
+</tbody></table>
+
+
+<p>To identify which slots are used, you will need to turn the value in <code>statX</code> to a binary format, with the least significant bit (LSB) being the value at the right.</p>
+
+<p><strong>Examples:</strong> <br>
+<code>stat0</code> - <code>00000001</code> would indicate that the only device slot in use between 1-8 would be in slot 1. <br>
+<code>stat0</code> - <code>00000011</code> would indicate that the device slots in use between 1-8 are in slots 1 &amp; 2. <br>
+<code>stat0</code> - <code>00000100</code> would indicate that the only device slot in use between 1-8 would be in slot 3. <br>
+<code>stat1</code> - <code>00000001</code> would indicate that the only device slot in use between 9-16 would be in slot 9. <br>
+<code>stat2</code> - <code>00000011</code> would indicate that the device slots in use between 17-24 are in slots 17 &amp; 18. <br>
+<code>stat3</code> - <code>10000001</code> would indicate that the device slots in use between 25-32 are in slots 25 &amp; 32.</p>
+
+<p>For example, if the value is <code>21</code>, then this converts to binary of <code>00010101</code>,  In the case of this, the slots in use are 1, 3 and 5.  </p>
+
+<p>With this information, it is then possible to check the information of the device in each slot by sending <code>@?R_</code> where <code>_</code> is the number of slot you’d like to check.  <code>@?R1</code>, <code>@?R2</code>, <code>@?R3</code>…<code>@?R80</code>, for example.  The Link will then respond with:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">160</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"room"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"read"</span>,
+    <span class="hljs-string">"room"</span>:<span class="hljs-string">"1"</span>,
+    <span class="hljs-string">"serial"</span>:<span class="hljs-string">"123ABC"</span>,
+    <span class="hljs-string">"prod"</span>:<span class="hljs-string">"pwrMtr"</span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>room</td>
+  <td>This JSON packet output relates to heating &amp; energy devices</td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>read</td>
+  <td>The device is being read</td>
+</tr>
+<tr>
+  <td>room</td>
+  <td>1-80</td>
+  <td>The slot the device is stored in</td>
+</tr>
+<tr>
+  <td>serial</td>
+  <td>ABC123</td>
+  <td>The serial number of the device that is in this slot</td>
+</tr>
+<tr>
+  <td>prod</td>
+  <td><code>valve</code>, <code>electr</code>, <code>tmr1ch</code>, <code>pwrMtr</code></td>
+  <td>The type of product that is in this slot</td>
+</tr>
+</tbody></table>
+
+
+<p>If you check a slot which has no device stored in it using <code>@?R_</code>, then the Link will then respond with:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs vbscript"><span class="hljs-number">123</span>,<span class="hljs-built_in">ERR</span>,<span class="hljs-number">5</span>,<span class="hljs-string">"Slot is empty"</span></code></pre>
+
+<p>for example:</p>
+
+
+
+<div class="sequence-diagram"><svg height="220" version="1.1" width="275.62499713897705" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="overflow: hidden; position: relative; top: -0.649994px;"><desc>Created with Raphaël 2.1.2</desc><defs><path stroke-linecap="round" d="M5,0 0,2.5 5,5z" id="raphael-marker-block"></path><marker id="raphael-marker-endblock55-obj364" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj367" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker></defs><rect x="10" y="20" width="59.266666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="30" width="39.266666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.63333320617676" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><rect x="10" y="160" width="59.266666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="170" width="39.266666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.63333320617676" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><path style="" fill="none" stroke="#000000" d="M39.63333320617676,60L39.63333320617676,160" stroke-width="2"></path><rect x="196.54166316986084" y="20" width="49.08333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="206.54165649414062" y="30" width="29.08333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="221.08333015441895" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><rect x="196.54166316986084" y="160" width="49.08333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="206.54165649414062" y="170" width="29.08333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="221.08333015441895" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><path style="" fill="none" stroke="#000000" d="M221.08333015441895,60L221.08333015441895,160" stroke-width="2"></path><rect x="94.72500610351562" y="75" width="71.26667022705078" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="130.35833168029785" y="85" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,@?R10</tspan></text><path style="" fill="none" stroke="#000000" d="M39.63333320617676,100C39.63333320617676,100,186.8950304655409,100,216.0885114652,100" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj364)" stroke-dasharray="0"></path><rect x="49.633338928222656" y="115" width="161.4499969482422" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="130.35833168029785" y="125" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,ERR,5,"Slot is empty"</tspan></text><path style="" fill="none" stroke="#000000" d="M221.08333015441895,140C221.08333015441895,140,73.82163289505479,140,44.62815189539569,140" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj367)" stroke-dasharray="0"></path></svg></div>
+
+<p><em>Last updated 1/12/16</em></p></section>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $('.toc a').click(function(e){
+                e.preventDefault();
+                var anc = $(this).attr('href');
+                location.hash = anc;
+            });
+        });
+    </script>
+
+  </body>
+</html>

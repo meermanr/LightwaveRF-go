@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html ng-app="link1Docs">
+
+  <head>
+    <base href="/">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightwaveRF Local API</title>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="assets/favicon/apple-touch-icon-57x57.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="60x60" href="assets/favicon/apple-touch-icon-60x60.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="72x72" href="assets/favicon/apple-touch-icon-72x72.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="76x76" href="assets/favicon/apple-touch-icon-76x76.png?v=lkkzg9444y">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-32x32.png?v=lkkzg9444y" sizes="32x32">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-96x96.png?v=lkkzg9444y" sizes="96x96">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-16x16.png?v=lkkzg9444y" sizes="16x16">
+    <link rel="manifest" href="assets/favicon/manifest.json?v=lkkzg9444y">
+    <link rel="mask-icon" href="assets/favicon/safari-pinned-tab.svg?v=lkkzg9444y" color="#5bbad5">
+    <link rel="shortcut icon" href="assets/favicon/favicon.ico?v=lkkzg9444y">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css">
+    <!-- <link rel="stylesheet" href="assets/css/stackedit.css" /> -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!--<link href="assets/css/bootstrap.cyborg.min.css" rel="stylesheet" type="text/css"/>-->
+
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script src="bower_components/jquery/dist/jquery.js" type="text/javascript"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="assets/css/main.css" />
+  </head>
+  <body>
+    <div class="container">
+
+        <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                    <a class="navbar-brand" href="/"><img style="height: 100%;" src="assets/favicon/favicon-96x96.png"></a>
+                </div>
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                  <ul class="nav navbar-nav">
+                      <li><a href="introduction_basic_comms.html">Introduction & Basic Comms</a></li>
+                      <li><a href="registration.html">Registration</a></li>
+                      <li><a href="lighting_power.html">Lighting & Power</a></li>
+                      <li><a href="events.html">Events</a></li>
+                      <li><a href="timers.html">Timers</a></li>
+                      <li><a href="energy.html">Energy</a></li>
+                      <li><a href="heating.html">Heating</a></li>
+                      <li><a href="settings.html">Settings</a></li>
+                  </ul>
+                </div><!-- /.navbar-collapse -->
+              </div><!-- /.container-fluid -->
+        </nav>
+
+      <a class="btn btn-default" href="/" style="position:fixed; top:10px; right:20px;">Home</a>
+      <!--<section class="container-fluid" ng-view=""></section>-->
+      <section class="container-fluid" style="margin-top: 50px;"><!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lightwave Link: Registration</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div class="container">
+<h1 id="registration"><i class="icon-ok"></i>Registration</h1>
+
+<p><div class="toc">
+<ul>
+<li><a href="#registration">Registration</a><ul>
+<li><a href="#de-registering">De-registering</a></li>
+<li><a href="#link-to-peripheral-linking">Link to Peripheral Linking</a></li>
+<li><a href="#unlinking">Unlinking</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</p>
+
+<p>Before any client device is able to communicate on the local network with the Link, it will need to be authorised by the Link as a security measure.  To do this, the physical Lightwave Link will need to be accessed.  If commands are sent out and the Link does not recognise the client device, it will respond with <code>ERR,1,"Not yet registered. Send !F*p to register"</code> or <code>ERR,2,"Not yet registered. Send !F*p to register"</code> depending on the Link unit used (<code>ERR 1</code> refers to the LW500, <code>ERR,2</code> refers to the LW930).  In versions 2.92 onwards, the Link will also output a JSON packet as below:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs perl"><span class="hljs-variable">*!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">123456</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"21:34:56"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1261929516</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"error"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"nonRegistered"</span>,
+    <span class="hljs-string">"payload"</span>:<span class="hljs-string">"Not yet registered. Send !F<span class="hljs-variable">*p</span> to register"</span>
+}</code></pre>
+
+<p>As the returned message suggests, you need to send the command <code>!F*p</code> to initiate the linking.  When you do this from an unregistered device, you will get<code>ERR,1,"Not yet registered. See WifiLink"</code> returned or <code>ERR,2,"Not yet registered. See LightwaveLink"</code>depending on the Link unit used.  In versions 2.92 onwards, the Link will also output a JSON packet as below:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs ruleslanguage">*!{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">123456</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"21:34:56"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1261929516</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"error"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"nonRegistered"</span>,
+    <span class="hljs-string">"payload"</span>:<span class="hljs-string">"Not yet registered. See LightwaveLink"</span> <span class="hljs-comment">//For LW930</span>
+              **<span class="hljs-keyword">OR</span>**
+    <span class="hljs-string">"payload"</span>:<span class="hljs-string">"Not yet registered. See WifiLink."</span>     <span class="hljs-comment">//For LW500</span>
+}</code></pre>
+
+<p>When this is received, the Link unit will enter a “linking” mode.  The light on the Link will flash (the screen on the LW500 will also show “App Link”) and the user will need to press the Link button within 12 seconds.  </p>
+
+<p>When the linking has been successful, the Link will output further JSON to confirm this to the client (or any clients on the network).</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs ruleslanguage">*!{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">123457</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"21:34:56"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1261929519</span>,
+    <span class="hljs-string">"type"</span>:<span class="hljs-string">"link"</span>,
+    <span class="hljs-string">"prod"</span>:<span class="hljs-string">"wfl"</span>, <span class="hljs-comment">//For LW500</span>
+           **<span class="hljs-keyword">OR</span>**
+    <span class="hljs-string">"prod"</span>:<span class="hljs-string">"lwl"</span>, <span class="hljs-comment">//For LW930</span>
+    <span class="hljs-string">"pairType"</span>:<span class="hljs-string">"local"</span>,
+    <span class="hljs-string">"msg"</span>:<span class="hljs-string">"success"</span>,
+    <span class="hljs-string">"class"</span>:<span class="hljs-string">""</span>,
+    <span class="hljs-string">"serial"</span>:<span class="hljs-string">""</span>
+}</code></pre>
+
+<p>There is no provisioning for which device was successfully linked, so if two unregistered clients were attempting to connect, you wouldn’t be able to identify which device was linked with the above packet.</p>
+
+<p>If the <code>!F*p</code> command is sent when the client device is already linked, then the version of the Link will be in the response instead in the format <code>?V="U2.93J"</code>.  This is used in the first party apps (i.e. those made by LightwaveRF Technology Ltd) to detect if a Link is accessible on the local network for control, by regularly transmitting <code>!F*p</code> and altering the client behaviour based on the response:</p>
+
+<ol>
+<li><code>Not yet registered. See WifiLink/LightwaveLink</code> is received; prompt user to check their Link unit to register</li>
+<li><code>?V="U2.93J"</code> is received; let the user know commands can be executed without latency</li>
+<li>Nothing is received; let the user know commands will not be able to be executed instantly</li>
+<li><code>1,ERR,1,"Pairing memory is full"</code> is received.  Prompt the user to de-register using an authorised client (see De-registering below), or using the manual hardware buttons.</li>
+</ol>
+
+<blockquote>
+  <p><strong>Note</strong> <br>
+  The Link is able to be linked to 12 client devices</p>
+</blockquote>
+
+<h2 id="de-registering"><i class="icon-scissors"></i>De-registering</h2>
+
+<p>Once a client device has the ability to control the Link unit, it is possible to remove all clients with a single command.  There is no ability to remove single clients, however.  From an authorised client device, send out <code>!F*xP</code>.  The Link will respond with an <code>OK</code> and subsequent commands will not be successful.</p>
+
+
+
+<div class="sequence-diagram"><svg height="300" version="1.1" width="452.8750123977661" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="overflow: hidden; position: relative; top: 0.733398px;"><desc>Created with Raphaël 2.1.2</desc><defs><path stroke-linecap="round" d="M5,0 0,2.5 5,5z" id="raphael-marker-block"></path><marker id="raphael-marker-endblock55-obj458" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj461" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj464" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj467" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker></defs><rect x="10" y="20" width="59.266666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="30" width="39.266666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.63333320617676" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><rect x="10" y="240" width="59.266666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="250" width="39.266666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.63333320617676" y="260" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><path style="" fill="none" stroke="#000000" d="M39.63333320617676,60L39.63333320617676,240" stroke-width="2"></path><rect x="373.7916784286499" y="20" width="49.08333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="383.79168701171875" y="30" width="29.08333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="398.333345413208" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><rect x="373.7916784286499" y="240" width="49.08333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="383.79168701171875" y="250" width="29.08333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="398.333345413208" y="260" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><path style="" fill="none" stroke="#000000" d="M398.333345413208,60L398.333345413208,240" stroke-width="2"></path><rect x="188.02500915527344" y="75" width="61.91666793823242" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="218.98333930969238" y="85" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,!F*xP</tspan></text><path style="" fill="none" stroke="#000000" d="M39.63333320617676,100C39.63333320617676,100,349.99026293745555,100,393.33112324172595,100" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj458)" stroke-dasharray="0"></path><rect x="195.36666870117188" y="115" width="47.233333587646484" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="218.98333930969238" y="125" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,OK</tspan></text><path style="" fill="none" stroke="#000000" d="M398.333345413208,140C398.333345413208,140,87.97641568192921,140,44.63555537765883,140" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj461)" stroke-dasharray="0"></path><rect x="188.02500915527344" y="155" width="61.91666793823242" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="218.98333930969238" y="165" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">124,!F*xP</tspan></text><path style="" fill="none" stroke="#000000" d="M39.63333320617676,180C39.63333320617676,180,349.99026293745555,180,393.33112324172595,180" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj464)" stroke-dasharray="0"></path><rect x="49.633338928222656" y="195" width="338.70001220703125" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="218.98333930969238" y="205" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">124,ERR,1/2,"Not yet registered. Send !F*p to register"</tspan></text><path style="" fill="none" stroke="#000000" d="M398.333345413208,220C398.333345413208,220,87.97641568192921,220,44.63555537765883,220" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj467)" stroke-dasharray="0"></path></svg></div>
+
+<hr>
+
+
+
+<h2 id="link-to-peripheral-linking"><i class="icon-exchange"></i>Link to Peripheral Linking</h2>
+
+<p>To use a client to link to a peripheral lighting or power device, you must first place the peripheral into linking mode, as described by its manual.  When it is in linking mode, the client simply needs to send a command to that device.  The actual command is unimportant; there is no specific linking command.  The peripheral simply learns that it should react to the appropriate Room &amp; Device combination.</p>
+
+<p>For example, if a dimmer is placed into linking mode, then it can be linked to Room 1, Device 1 by sending <code>!R1D1F1</code>,<code>!R1D1F0</code>,<code>!R1D1FdP16</code> or <code>!R1D1Fu</code> - just as long as the command sent is one that the peripheral will understand.  A dim command sent to a socket, would not be understood, for example.</p>
+
+<hr>
+
+
+
+<h2 id="unlinking"><i class="icon-cancel"></i>Unlinking</h2>
+
+<p>As the linking information is stored within the peripheral device and not the Link, there is no command to remove the peripheral device from the Link itself.  Instead, the Link is used to transmit the command for the peripheral to forget.  The process is identical to linking for this - send a command when the peripheral is in linking mode.</p>
+
+<p>Essentially, if the peripheral does not recognise the command received while in linking mode, it will learn it.  If it does recognise it, then it will forget it.</p>
+
+<p><em>Last updated 16/12/16</em></p></section>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $('.toc a').click(function(e){
+                e.preventDefault();
+                var anc = $(this).attr('href');
+                location.hash = anc;
+            });
+        });
+    </script>
+
+  </body>
+</html>

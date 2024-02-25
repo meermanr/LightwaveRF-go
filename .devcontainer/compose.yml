@@ -1,0 +1,15 @@
+---
+name: lightwaverf-go
+services:
+  devcontainer:
+    image: golang:1.22-alpine
+    build: .
+      
+    volumes:
+      - "../../:/workspaces:cached"
+    
+    # Listening for broadcast traffic from the LightwaveRF Link (LWL) means we
+    # need to listen on the host's interface(s)
+    network_mode: host
+    command: sleep infinity
+...

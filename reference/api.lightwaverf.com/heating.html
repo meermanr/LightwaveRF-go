@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html ng-app="link1Docs">
+
+  <head>
+    <base href="/">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightwaveRF Local API</title>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="assets/favicon/apple-touch-icon-57x57.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="60x60" href="assets/favicon/apple-touch-icon-60x60.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="72x72" href="assets/favicon/apple-touch-icon-72x72.png?v=lkkzg9444y">
+    <link rel="apple-touch-icon" sizes="76x76" href="assets/favicon/apple-touch-icon-76x76.png?v=lkkzg9444y">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-32x32.png?v=lkkzg9444y" sizes="32x32">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-96x96.png?v=lkkzg9444y" sizes="96x96">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon-16x16.png?v=lkkzg9444y" sizes="16x16">
+    <link rel="manifest" href="assets/favicon/manifest.json?v=lkkzg9444y">
+    <link rel="mask-icon" href="assets/favicon/safari-pinned-tab.svg?v=lkkzg9444y" color="#5bbad5">
+    <link rel="shortcut icon" href="assets/favicon/favicon.ico?v=lkkzg9444y">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css">
+    <!-- <link rel="stylesheet" href="assets/css/stackedit.css" /> -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!--<link href="assets/css/bootstrap.cyborg.min.css" rel="stylesheet" type="text/css"/>-->
+
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script src="bower_components/jquery/dist/jquery.js" type="text/javascript"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="assets/css/main.css" />
+  </head>
+  <body>
+    <div class="container">
+
+        <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                    <a class="navbar-brand" href="/"><img style="height: 100%;" src="assets/favicon/favicon-96x96.png"></a>
+                </div>
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                  <ul class="nav navbar-nav">
+                      <li><a href="introduction_basic_comms.html">Introduction & Basic Comms</a></li>
+                      <li><a href="registration.html">Registration</a></li>
+                      <li><a href="lighting_power.html">Lighting & Power</a></li>
+                      <li><a href="events.html">Events</a></li>
+                      <li><a href="timers.html">Timers</a></li>
+                      <li><a href="energy.html">Energy</a></li>
+                      <li><a href="heating.html">Heating</a></li>
+                      <li><a href="settings.html">Settings</a></li>
+                  </ul>
+                </div><!-- /.navbar-collapse -->
+              </div><!-- /.container-fluid -->
+        </nav>
+
+      <a class="btn btn-default" href="/" style="position:fixed; top:10px; right:20px;">Home</a>
+      <!--<section class="container-fluid" ng-view=""></section>-->
+      <section class="container-fluid" style="margin-top: 50px;"><!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lightwave Link: Heating</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div class="container">
+<h1 id="heating"><i class="icon-fire"></i>Heating</h1>
+
+<p><div class="toc">
+<ul>
+<li><a href="#heating">Heating</a><ul>
+<li><a href="#heating-introduction">Heating Introduction</a><ul>
+<li><a href="#general-heating-operation">General Heating Operation</a></li>
+<li><a href="#switching">Switching</a></li>
+<li><a href="#scheduling">Scheduling</a></li>
+<li><a href="#linking">Linking</a></li>
+<li><a href="#unlinking">Unlinking</a></li>
+<li><a href="#reading-heating-devices">Reading Heating Devices</a></li>
+</ul>
+</li>
+<li><a href="#communication-to-the-heating-products">Communication to the Heating Products</a><ul>
+<li><a href="#communication-errors-with-heating-products">Communication Errors with Heating Products</a></li>
+</ul>
+</li>
+<li><a href="#communication-from-heating-products">Communication from Heating Products</a></li>
+<li><a href="#setting-temperatures">Setting Temperatures</a><ul>
+<li><a href="#trv-and-electric-switch-settings">TRV and Electric Switch Settings</a></li>
+</ul>
+</li>
+<li><a href="#manual-changes">Manual Changes</a><ul>
+<li><a href="#thermostat">Thermostat</a></li>
+<li><a href="#trv">TRV</a></li>
+<li><a href="#electric-switch">Electric Switch</a></li>
+<li><a href="#boost">Boost</a></li>
+</ul>
+</li>
+<li><a href="#setting-schedules">Setting Schedules</a></li>
+<li><a href="#modes">Modes</a><ul>
+<li><a href="#running-mode">Running Mode</a></li>
+<li><a href="#manual-mode">Manual Mode</a></li>
+<li><a href="#frost-mode">Frost Mode</a></li>
+<li><a href="#constant-mode">Constant Mode</a></li>
+<li><a href="#away-mode">Away Mode</a></li>
+<li><a href="#boost-mode">Boost Mode</a></li>
+<li><a href="#calibrate-mode">Calibrate Mode</a></li>
+<li><a href="#holiday-mode">Holiday Mode</a></li>
+<li><a href="#standby-mode">Standby Mode</a></li>
+<li><a href="#setting-modes-from-the-lightwave-link">Setting Modes from the Lightwave Link</a></li>
+</ul>
+</li>
+<li><a href="#call-for-heat">Call For Heat</a><ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#setup">Setup</a></li>
+<li><a href="#reading-the-call-for-heat-setup">Reading the Call For Heat Setup</a></li>
+<li><a href="#turning-call-for-heat-on-and-off">Turning Call for Heat On and Off</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</p>
+
+
+
+<h1 id="heating"><i class="icon-fire"></i>Heating</h1>
+
+<p><div class="toc">
+<ul>
+<li><a href="#heating">Heating</a><ul>
+<li><a href="#heating-introduction">Heating Introduction</a><ul>
+<li><a href="#general-heating-operation">General Heating Operation</a></li>
+<li><a href="#switching">Switching</a></li>
+<li><a href="#scheduling">Scheduling</a></li>
+<li><a href="#linking">Linking</a></li>
+<li><a href="#unlinking">Unlinking</a></li>
+<li><a href="#reading-heating-devices">Reading Heating Devices</a></li>
+</ul>
+</li>
+<li><a href="#communication-to-the-heating-products">Communication to the Heating Products</a><ul>
+<li><a href="#communication-errors-with-heating-products">Communication Errors with Heating Products</a></li>
+</ul>
+</li>
+<li><a href="#communication-from-heating-products">Communication from Heating Products</a></li>
+<li><a href="#setting-temperatures">Setting Temperatures</a><ul>
+<li><a href="#trv-and-electric-switch-settings">TRV and Electric Switch Settings</a></li>
+</ul>
+</li>
+<li><a href="#manual-changes">Manual Changes</a><ul>
+<li><a href="#thermostat">Thermostat</a></li>
+<li><a href="#trv">TRV</a></li>
+<li><a href="#electric-switch">Electric Switch</a></li>
+<li><a href="#boost">Boost</a></li>
+</ul>
+</li>
+<li><a href="#setting-schedules">Setting Schedules</a></li>
+<li><a href="#modes">Modes</a><ul>
+<li><a href="#running-mode">Running Mode</a></li>
+<li><a href="#manual-mode">Manual Mode</a></li>
+<li><a href="#frost-mode">Frost Mode</a></li>
+<li><a href="#constant-mode">Constant Mode</a></li>
+<li><a href="#away-mode">Away Mode</a></li>
+<li><a href="#boost-mode">Boost Mode</a></li>
+<li><a href="#calibrate-mode">Calibrate Mode</a></li>
+<li><a href="#holiday-mode">Holiday Mode</a></li>
+<li><a href="#standby-mode">Standby Mode</a></li>
+<li><a href="#setting-modes-from-the-lightwave-link">Setting Modes from the Lightwave Link</a></li>
+</ul>
+</li>
+<li><a href="#call-for-heat">Call For Heat</a><ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#setup">Setup</a></li>
+<li><a href="#reading-the-call-for-heat-setup">Reading the Call For Heat Setup</a></li>
+<li><a href="#turning-call-for-heat-on-and-off">Turning Call for Heat On and Off</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</p>
+
+
+
+<h2 id="heating-introduction"><i class="icon-eye"></i>Heating Introduction</h2>
+
+<p>Heating products were the first products in the LightwaveRF line up which had the ability to both send and receive radio packets. The Link will receive data from these devices and is able to interrogate them for their status.  This allows the Heating products to be the first products which LightwaveRF offer which are able to be controlled, then check that the control was received by the peripheral device.</p>
+
+<p>The heating products consist of:</p>
+
+<p>Boiler Switch (<strong>LW920</strong>) <br>
+Home Thermostat (<strong>LW921</strong>) <br>
+Thermostatic Radiator Valve (AKA the TRV) (<strong>LW922</strong>) <br>
+Electric Switch (<strong>LW934</strong>)</p>
+
+<p>The Home Thermostat is able to link to each of the other three products.  It is required to link to the Boiler Switch to control the Boiler Switch, as the Boiler Switch is reliant on external control from the Home Thermostat.  The Boiler Switch won’t be discussed in the remainder of the Heating section in reference to control from the Link as it is unsupported. </p>
+
+<blockquote>
+  <p><strong>Note</strong> <br>
+  Heating devices require the Link to be running on a version which is prefixed with U or N.  Links which are prefixed with V do not support heating, though they can have their firmware changed to U by contacting support.</p>
+</blockquote>
+
+
+
+<h3 id="general-heating-operation">General Heating Operation</h3>
+
+<p>All heating products behave similarly in their standard operation, and it is unique within the LightwaveRF range.  The devices have the ability to store the current time, and they store the times that they should switch internally as opposed to lighting and power products which switch based on the settings the Link unit has.  This allows each peripheral to act independent of the Links presence, if the peripheral has the received the time.</p>
+
+<p>The time is sent out to each peripheral when it boots up, and if a paired Link unit is present.  If the Link detects that the peripheral does not have the correct time, it will respond to the peripheral with the time.</p>
+
+
+
+<h3 id="switching">Switching</h3>
+
+<p>The devices will target a specified temperature and switch on and off (or on a TRV open and close) based on the temperature that they read, in comparison to the temperature they are set to.  If the target temperature is 0.5C above the current temperature, the device will then switch off.  If the target temperature is 0.5C below the current temperature, the device will then switch on.</p>
+
+
+
+<h3 id="scheduling">Scheduling</h3>
+
+<p>Each device is capable of storing a schedule for each day of the week, with each day broken up into 96 fifteen minute segments.  The devices will then be able to target a single “setback” temperature as well as up to five “on” temperatures throughout each day.</p>
+
+<p>The setback temperature is used when the device is not in an “on” period to have a target temperature the device never falls below.  For example, it is very rare for heating device to be required to be switched off completely as this can allow frost/damp to occur, whereas targeting a low temperature such as 10C allows a property/room to warm enough enough so that this is not a problem, but still not to have the heating on unless in extreme circumstances.</p>
+
+<p>If the user sets a temperature out of the schedule, the device will then follow this new target until the next change in schedule.  Once the schedule changes, the device will revert to its original schedule and will not then change the target for the schedule on any other days.</p>
+
+<hr>
+
+
+
+<h3 id="linking">Linking</h3>
+
+<p>Linking a heating/energy device is done differently from the linking of a lighting power device.  The heating/energy devices have linking information stored in themselves, as well as the Link storing information about the devices product type and serial.</p>
+
+<p>The Link is able to connect to up to 80 heating devices, though it shares the same space with energy devices, so if there any energy devices linked, this number will be 80 minus<code>&lt;number of energy devices&gt;</code>.</p>
+
+<p>To link a device, the Link must first enter linking mode.  To send the Link into linking mode, the client should choose the appropriate slot number they want to assign to the device (1 to 80) and send the below command:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs diff"><span class="hljs-change">!R_F*L</span></code></pre>
+
+<p>where <code>_</code> is the slot number chosen.  </p>
+
+<blockquote>
+  <p><strong>Note</strong> <br>
+  Despite the command beginning with R, this is not related to lighting/power/moods or any room control.  Linking a device to R1, then sending !R1Fa (Room 1 All Off) would <strong>not</strong> turn the heating device in slot 1 off.</p>
+</blockquote>
+
+<p>Once the command has been sent and the Link has given the OK response, then the user would be able to place their peripheral into linking mode for it to connect to the Link.  A successful link will have the Link output:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">123</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"868R"</span>,
+    <span class="hljs-string">"prod"</span>:<span class="hljs-string">"tmr1ch"</span>,
+    <span class="hljs-string">"serial"</span>:<span class="hljs-string">"ABC123"</span>,
+    <span class="hljs-string">"type"</span>:<span class="hljs-string">"link"</span>,
+    <span class="hljs-string">"room"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"pairType"</span>:<span class="hljs-string">"product"</span>,
+    <span class="hljs-string">"class"</span>:<span class="hljs-string">""</span>,
+    <span class="hljs-string">"msg"</span>:<span class="hljs-string">"success"</span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>868R</td>
+  <td>This communication is a result of 868MHz radio being received)</td>
+</tr>
+<tr>
+  <td>prod</td>
+  <td>tmr1ch</td>
+  <td>The type of product that has been added is a Thermostat (tmr1ch = Timer 1 Channel)</td>
+</tr>
+<tr>
+  <td></td>
+  <td>valve</td>
+  <td>The type of product that has been added is a TRV</td>
+</tr>
+<tr>
+  <td></td>
+  <td>electr</td>
+  <td>The type of product that has been added is a Electric Switch</td>
+</tr>
+<tr>
+  <td>serial</td>
+  <td>ABC123</td>
+  <td>The serial number of the product which has been added</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>link</td>
+  <td>The type of packet the Lightwave Link is sending is a “link” packet</td>
+</tr>
+<tr>
+  <td>room</td>
+  <td>0-80</td>
+  <td>The slot number which the device has been added to</td>
+</tr>
+<tr>
+  <td>pairType</td>
+  <td>product</td>
+  <td>This link packet is referencing the addition of a new product (as opposed to a local phone/tablet/PC)</td>
+</tr>
+<tr>
+  <td>class</td>
+  <td>n/a</td>
+  <td>unused</td>
+</tr>
+<tr>
+  <td>msg</td>
+  <td>success</td>
+  <td>The linking has been successful</td>
+</tr>
+</tbody></table>
+
+
+<h3 id="unlinking">Unlinking</h3>
+
+<p>To remove a previously added heating/energy device, the process is similar to linking.</p>
+
+<p>To unlink a device, the client should choose the appropriate slot number they want to remove from the Link (1 to 80) and send the below command:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs diff"><span class="hljs-change">!R_F*xU</span></code></pre>
+
+<p>where <code>_</code> is the slot number chosen.</p>
+
+<p>The peripheral does not need to be placed into linking mode for this as the Link unit will remove the pairing in itself and will no longer output any data the peripheral broadcasts out.</p>
+
+<p>A successful unlink will have the Link output:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">123</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"868R"</span>,
+    <span class="hljs-string">"type"</span>:<span class="hljs-string">"unlink"</span>,
+    <span class="hljs-string">"room"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"pairType"</span>:<span class="hljs-string">"product"</span>,
+    <span class="hljs-string">"class"</span>:<span class="hljs-string">""</span>,
+    <span class="hljs-string">"msg"</span>:<span class="hljs-string">"success"</span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>868R</td>
+  <td>This communication is a result of 868MHz radio being received (in this instance, this is incorrect)</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>unlink</td>
+  <td>The type of packet the Lightwave Link is sending is an “unlink” packet</td>
+</tr>
+<tr>
+  <td>room</td>
+  <td>0-80</td>
+  <td>The slot number which the device has been added to</td>
+</tr>
+<tr>
+  <td>pairType</td>
+  <td>product</td>
+  <td>This unlink packet is referencing a product which is being removed</td>
+</tr>
+<tr>
+  <td>class</td>
+  <td>n/a</td>
+  <td>unused</td>
+</tr>
+<tr>
+  <td>msg</td>
+  <td>success</td>
+  <td>The unlinking has been successful</td>
+</tr>
+</tbody></table>
+
+
+
+
+<h3 id="reading-heating-devices">Reading Heating Devices</h3>
+
+<p>Additionally, it is also possible to obtain the current record for the devices stored in the Link to understand how many are currently stored, and what the IDs of them are, and what type of device is stored in each slot.  This is only for heating and energy devices.</p>
+
+<p>The devices are stored in an internal table of 80 rows, and you can interrogate which rows in the table have been used by sending the command <code>@R</code>.  The Link will then respond with:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">36409</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"room"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"summary"</span>,
+    <span class="hljs-string">"stat0"</span>:<span class="hljs-number">7</span>,
+    <span class="hljs-string">"stat1"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat2"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat3"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat4"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat5"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat6"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat7"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat8"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"stat9"</span>:<span class="hljs-number">0</span>
+}</code></pre>
+
+<p>where the first three values are the same, and the following are:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>pkt</td>
+  <td>room</td>
+  <td></td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>summary</td>
+  <td>This packet is a summary of the Room details</td>
+</tr>
+<tr>
+  <td>stat0</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 1-8</td>
+</tr>
+<tr>
+  <td>stat1</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 9-16</td>
+</tr>
+<tr>
+  <td>stat2</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 17-24</td>
+</tr>
+<tr>
+  <td>stat3</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 25-32</td>
+</tr>
+<tr>
+  <td>stat4</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 33-40</td>
+</tr>
+<tr>
+  <td>stat5</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 41-48</td>
+</tr>
+<tr>
+  <td>stat6</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 49-56</td>
+</tr>
+<tr>
+  <td>stat7</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 57-64</td>
+</tr>
+<tr>
+  <td>stat8</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 65-72</td>
+</tr>
+<tr>
+  <td>stat9</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots are in use for slots 73-80</td>
+</tr>
+</tbody></table>
+
+
+<p>To identify which slots are used, you will need to turn the value in <code>statX</code> to a binary format, with the least significant bit (LSB) being the value at the right.</p>
+
+<p><strong>Examples:</strong> <br>
+<code>stat0</code> - <code>00000001</code> would indicate that the only device slot in use between 1-8 would be in slot 1. <br>
+<code>stat0</code> - <code>00000011</code> would indicate that the device slots in use between 1-8 are in slots 1 &amp; 2. <br>
+<code>stat0</code> - <code>00000100</code> would indicate that the only device slot in use between 1-8 would be in slot 3. <br>
+<code>stat1</code> - <code>00000001</code> would indicate that the only device slot in use between 9-16 would be in slot 9. <br>
+<code>stat2</code> - <code>00000011</code> would indicate that the device slots in use between 17-24 are in slots 17 &amp; 18. <br>
+<code>stat3</code> - <code>10000001</code> would indicate that the device slots in use between 25-32 are in slots 25 &amp; 32.</p>
+
+<p>For example, if the value is <code>21</code>, then this converts to binary of <code>00010101</code>,  In the case of this, the slots in use are 1, 3 and 5.  </p>
+
+<p>With this information, it is then possible to check the information of the device in each slot by sending <code>@?R_</code> where <code>_</code> is the number of slot you’d like to check.  <code>@?R1</code>, <code>@?R2</code>, <code>@?R3</code>…<code>@?R80</code>, for example.  The Link will then respond with:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">160</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1420070400</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"room"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"read"</span>,
+    <span class="hljs-string">"slot"</span>:<span class="hljs-string">"1"</span>,
+    <span class="hljs-string">"serial"</span>:<span class="hljs-string">"123ABC"</span>,
+    <span class="hljs-string">"prod"</span>:<span class="hljs-string">"valve"</span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>room</td>
+  <td>This JSON packet output relates to heating &amp; energy devices</td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>read</td>
+  <td>The device is being read</td>
+</tr>
+<tr>
+  <td>slot</td>
+  <td>1-80</td>
+  <td>The slot the device is stored in</td>
+</tr>
+<tr>
+  <td>serial</td>
+  <td>ABC123</td>
+  <td>The serial number of the device that is in this slot</td>
+</tr>
+<tr>
+  <td>prod</td>
+  <td><code>valve</code>, <code>electr</code>, <code>tmr1ch</code>, <code>pwrMtr</code></td>
+  <td>The type of product that is in this slot</td>
+</tr>
+</tbody></table>
+
+
+<p>If you check a slot which has no device stored in it using <code>@?R_</code>, then the Link will then respond with:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs vbscript"><span class="hljs-number">123</span>,<span class="hljs-built_in">ERR</span>,<span class="hljs-number">5</span>,<span class="hljs-string">"Slot is empty"</span></code></pre>
+
+<p>for example:</p>
+
+
+
+<div class="sequence-diagram"><svg height="220" version="1.1" width="274.6583375930786" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="overflow: hidden; position: relative; left: -0.25px; top: -0.25px;"><desc>Created with Raphaël 2.1.2</desc><defs><path stroke-linecap="round" d="M5,0 0,2.5 5,5z" id="raphael-marker-block"></path><marker id="raphael-marker-endblock55-obj20" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj23" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker></defs><rect x="10" y="20" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="30" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><rect x="10" y="160" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="170" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,60L39.38333320617676,160" stroke-width="2"></path><rect x="196.0750036239624" y="20" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="206.0749969482422" y="30" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="220.3666706085205" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><rect x="196.0750036239624" y="160" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="206.0749969482422" y="170" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="220.3666706085205" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><path style="" fill="none" stroke="#000000" d="M220.3666706085205,60L220.3666706085205,160" stroke-width="2"></path><rect x="94.48332977294922" y="75" width="70.78333282470703" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="129.87500190734863" y="85" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,@?R10</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,100C39.38333320617676,100,186.18669702752595,100,215.36099833381948,100" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj20)" stroke-dasharray="0"></path><rect x="49.38333511352539" y="115" width="160.98333740234375" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="129.87500190734863" y="125" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,ERR,5,"Slot is empty"</tspan></text><path style="" fill="none" stroke="#000000" d="M220.3666706085205,140C220.3666706085205,140,73.56330678717131,140,44.3890054808778,140" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj23)" stroke-dasharray="0"></path></svg></div>
+
+
+
+<h2 id="communication-to-the-heating-products"><i class="icon-exchange"></i>Communication to the Heating Products</h2>
+
+<p>In recent versions of the Lightwave Link and WiFiLink (2.92 onwards) there have been the introduction of JSON packets in response to almost all commands.  When the Link receives the commands above, it will send an OK response initially (described in Example Interactions) and then a second, separate reponse which contains <code>"packet"</code> which denotes the ID of the radio it will send out, as well as further information detailing the communication.  This will allow a client to decide whether the communication was successful or not, and take the appropriate steps as necessary (for example, to resend the radio, or to display an error to the user) in the subsequent communications.</p>
+
+<p>The heating products can accept many different commands to change targets, store schedules, change their mode and more.  The packet contents will vary accordingly, but below is an example guide of the general communication based on a “Set Temperature” command:</p>
+
+<p><code>S[255.255.255.255:9760]: 123,!R7F*tP17</code> <br>
+<code>R[192.168.1.103:9760]:</code>  <code>*!{"trans":691,"mac":"03:34:BC","time":1475323582,"pkt":"868T","fn":"setTarget","room":7,"temp":17.0,"minutes":0,"packet":191}</code> <br>
+<code>R[192.168.1.103:9760]:   123,OK</code> <br>
+<code>R[192.168.1.103:9760]:</code>  <code>*!{"trans":692,"mac":"20:04:96","time":1475323584,"pkt":"868R","fn":"ack","status":"success","attempts":1,"packet":191}</code> <br>
+<code>R[192.168.1.103:9760]:</code>  <br>
+ <code>*!{"trans,mac,time,pkt,fn,prod,serial,type,batt,ver...",state":"run","cTemp":22.0,"cTarg":17.0,"output,nTarg,nSlot,prof..."}</code></p>
+
+<div class="sequence-diagram"><svg height="460" version="1.1" width="1137.9416790008545" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="overflow: hidden; position: relative; left: -0.25px; top: -0.649994px;"><desc>Created with Raphaël 2.1.2</desc><defs><marker id="raphael-marker-endblock55-obj386" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj389" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj392" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj395" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj398" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj401" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj404" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj407" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker></defs><rect x="10" y="20" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="30" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><rect x="10" y="400" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="410" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="420" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,60L39.38333320617676,400" stroke-width="2"></path><rect x="840.2750158309937" y="20" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="850.2750244140625" y="30" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="864.5666828155518" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><rect x="840.2750158309937" y="400" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="850.2750244140625" y="410" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="864.5666828155518" y="420" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><path style="" fill="none" stroke="#000000" d="M864.5666828155518,60L864.5666828155518,400" stroke-width="2"></path><rect x="1021.0916805267334" y="20" width="86.8499984741211" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="1031.0916748046875" y="30" width="66.8499984741211" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="1064.516679763794" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Peripheral</tspan></text><rect x="1021.0916805267334" y="400" width="86.8499984741211" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="1031.0916748046875" y="410" width="66.8499984741211" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="1064.516679763794" y="420" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Peripheral</tspan></text><path style="" fill="none" stroke="#000000" d="M1064.516679763794,60L1064.516679763794,400" stroke-width="2"></path><rect x="406.54168701171875" y="75" width="90.86666870117188" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="451.97500801086426" y="85" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,!R7F*tP17</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,100C39.38333320617676,100,790.940293464213,100,859.563902628399,100" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj386)" stroke-dasharray="0"></path><rect x="874.5667114257812" y="115" width="179.9499969482422" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="964.5416812896729" y="125" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">(RF Target Temperature 17C)</tspan></text><path style="" fill="none" stroke="#000000" d="M864.5666828155518,140C864.5666828155518,140,1028.6065183279097,140,1059.5241826383444,140" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj389)" stroke-dasharray="6,2"></path><rect x="49.383338928222656" y="155" width="805.183349609375" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="451.97500801086426" y="165" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">*!{"trans":691,"mac":"03:34:BC","time":1475323582,"pkt":"868T","fn":"setTarget","room":7,"temp":17.0,"minutes":0,"packet":191}</tspan></text><path style="" fill="none" stroke="#000000" d="M864.5666828155518,180C864.5666828155518,180,113.00972255751549,180,44.38611339332956,180" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj392)" stroke-dasharray="0"></path><rect x="428.60833740234375" y="195" width="46.733333587646484" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="451.97500801086426" y="205" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,OK</tspan></text><path style="" fill="none" stroke="#000000" d="M864.5666828155518,220C864.5666828155518,220,113.00972255751549,220,44.38611339332956,220" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj395)" stroke-dasharray="0"></path><rect x="875.1500244140625" y="235" width="178.78334045410156" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="964.5416812896729" y="245" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">(RF Message Acknowledged)</tspan></text><path style="" fill="none" stroke="#000000" d="M1064.516679763794,260C1064.516679763794,260,900.476844251436,260,869.5591799410014,260" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj398)" stroke-dasharray="6,2"></path><rect x="76.52500915527344" y="275" width="750.9000244140625" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="451.97500801086426" y="285" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">*!{"trans":692,"mac":"20:04:96","time":1475323584,"pkt":"868R","fn":"ack","status":"success","attempts":1,"packet":191}</tspan></text><path style="" fill="none" stroke="#000000" d="M864.5666828155518,300C864.5666828155518,300,113.00972255751549,300,44.38611339332956,300" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj401)" stroke-dasharray="0"></path><rect x="904.7583618164062" y="315" width="119.56666564941406" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="964.5416812896729" y="325" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">(RF Update Status)</tspan></text><path style="" fill="none" stroke="#000000" d="M1064.516679763794,340C1064.516679763794,340,900.476844251436,340,869.5591799410014,340" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj404)" stroke-dasharray="6,2"></path><rect x="79.48333740234375" y="355" width="744.9833374023438" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="451.97500801086426" y="365" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">*!{"trans,mac,time,pkt,fn,prod,serial,type,batt,ver...",state":"run","cTemp":22.0,"cTarg":17.0,"output/nTarg/nSlot/prof"}</tspan></text><path style="" fill="none" stroke="#000000" d="M864.5666828155518,380C864.5666828155518,380,113.00972255751549,380,44.38611339332956,380" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj407)" stroke-dasharray="0"></path></svg></div>
+
+<p>Once the message has been sent, then the Link will go through numerous communications on UDP and RF.</p>
+
+<p>The first response a client will typically receive if the command is successful is the Link broadcasting that it has just sent radio out. The JSON will detail the contents of the radio message broadcast.</p>
+
+<p>The second message will be the standard OK response to your UDP command.  This will come second as the Link needs to transmit the radio to obtain the Radio ID of the packet it transmitted.  This ID is then suffixed to the OK message to allow a client to trace the command they sent, in the event that other RF comms are output subsequently.</p>
+
+<p>If the RF was received by the peripheral, it will respond with an acknowledgement which the Link will output as a 868 receive message containing the ID of the acknowledged packet, and the number of attempts it had to output RF for the acknowledgement to be received.  The link will automatically re-attempt an RF communication up to five times if no response is received.</p>
+
+<p>Finally, the peripheral will action the received command and output its changes as a normal update.  The Link will output this as an 868 receive message detailing the update that the peripheral has provided.</p>
+
+<p>The acknowledgement can be used as confirmation of a successful end-to-end communication between a client, the Link and a peripheral, but the final update from the peripheral can be used as a double check that your intended command was acted upon.</p>
+
+<p>Details of the packets received from a heating device are outline further below in <strong>Communication from Heating Products</strong></p>
+
+<h3 id="communication-errors-with-heating-products"><i class="icon-attention"></i>Communication Errors with Heating Products</h3>
+
+<p>It is possible that communication is not able to be established with a peripheral.  If the Link is not able to send the RF message out, it will output that there has been a “Transmit fail” instead of an OK:</p>
+
+
+
+<div class="sequence-diagram"><svg height="220" version="1.1" width="271.17500019073486" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="overflow: hidden; position: relative; left: -0.25px; top: -0.616211px;"><desc>Created with Raphaël 2.1.2</desc><defs><marker id="raphael-marker-endblock55-obj100" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj103" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker></defs><rect x="10" y="20" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="30" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><rect x="10" y="160" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="170" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,60L39.38333320617676,160" stroke-width="2"></path><rect x="192.59166622161865" y="20" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="202.59165954589844" y="30" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="216.88333320617676" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><rect x="192.59166622161865" y="160" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="202.59165954589844" y="170" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="216.88333320617676" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><path style="" fill="none" stroke="#000000" d="M216.88333320617676,60L216.88333320617676,160" stroke-width="2"></path><rect x="82.7750015258789" y="75" width="90.71666717529297" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="128.13333320617676" y="85" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">170,!R5FtP*20</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,100C39.38333320617676,100,183.04914984107018,100,211.88052222238912,100" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj100)" stroke-dasharray="0"></path><rect x="49.383331298828125" y="115" width="157.5" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="128.13333320617676" y="125" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">170,ERR,6,"Transmit fail"</tspan></text><path style="" fill="none" stroke="#000000" d="M216.88333320617676,140C216.88333320617676,140,73.21751657128334,140,44.3861441899644,140" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj103)" stroke-dasharray="0"></path></svg></div>
+
+<p>The transmit fail received could be a result of the Link processing another RF packet, or an invalid R slot having been sent by the client.</p>
+
+<p>It is possible that the failure is down to the peripheral not responding:</p>
+
+
+
+<div class="sequence-diagram"><svg height="340" version="1.1" width="926.7749919891357" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="overflow: hidden; position: relative; left: -0.25px; top: -0.966675px;"><desc>Created with Raphaël 2.1.2</desc><defs><marker id="raphael-marker-endblock55-obj283" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj286" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj289" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj292" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj295" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker></defs><rect x="10" y="20" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="30" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><rect x="10" y="280" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="290" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="300" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,60L39.38333320617676,280" stroke-width="2"></path><rect x="684.6249914169312" y="20" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="694.625" y="30" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="708.9166584014893" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><rect x="684.6249914169312" y="280" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="694.625" y="290" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="708.9166584014893" y="300" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><path style="" fill="none" stroke="#000000" d="M708.9166584014893,60L708.9166584014893,280" stroke-width="2"></path><rect x="809.9249935150146" y="20" width="86.8499984741211" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="819.9249877929688" y="30" width="66.8499984741211" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="853.3499927520752" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Peripheral</tspan></text><rect x="809.9249935150146" y="280" width="86.8499984741211" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="819.9249877929688" y="290" width="66.8499984741211" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="853.3499927520752" y="300" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Peripheral</tspan></text><path style="" fill="none" stroke="#000000" d="M853.3499927520752,60L853.3499927520752,280" stroke-width="2"></path><rect x="340.4166564941406" y="75" width="67.53333282470703" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="374.149995803833" y="85" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,!R8F*r</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,100C39.38333320617676,100,642.6437293160707,100,703.9123632959818,100" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj283)" stroke-dasharray="0"></path><rect x="718.9166259765625" y="115" width="124.43333435058594" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="781.1333255767822" y="125" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">(RF Request Status)</tspan></text><path style="" fill="none" stroke="#000000" d="M708.9166584014893,140C708.9166584014893,140,822.918443713831,140,848.3573186590166,140" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj286)" stroke-dasharray="6,2"></path><rect x="49.38332748413086" y="155" width="649.5333251953125" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="374.149995803833" y="165" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">*!{"trans":718,"mac":"20:04:96","time":1475325023,"pkt":"868T","fn":"getStatus","room":8,"packet":202}</tspan></text><path style="" fill="none" stroke="#000000" d="M708.9166584014893,180C708.9166584014893,180,105.65626229159534,180,44.38762831168424,180" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj289)" stroke-dasharray="0"></path><rect x="350.7833251953125" y="195" width="46.733333587646484" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="374.149995803833" y="205" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,OK</tspan></text><path style="" fill="none" stroke="#000000" d="M708.9166584014893,220C708.9166584014893,220,105.65626229159534,220,44.38762831168424,220" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj292)" stroke-dasharray="0"></path><rect x="54.37499237060547" y="235" width="639.5499877929688" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="374.149995803833" y="245" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">*!{"trans":719,"mac":"20:04:96","time":1475325032,"pkt":"868R","fn":"ack","status":"fail","packet":202}</tspan></text><path style="" fill="none" stroke="#000000" d="M708.9166584014893,260C708.9166584014893,260,105.65626229159534,260,44.38762831168424,260" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj295)" stroke-dasharray="0"></path></svg></div>
+
+<p>This example is similar to the successful example given earlier, as there is confirmation of the RF getting sent out, and the OK response going to the client.  However, after approx 8-10 seconds of retrying, the Link did not receive any acknowledgement from the peripheral and posted out that the acknowledgement failed for that Radio ID.</p>
+
+<p>The failure could be a result of the peripheral having no power, being out of range, or the peripheral itself having its memory cleared/getting linked to another controller.  If the latter occurred, there is no communication to the Link to alert it that this has happened.  It is also possible, but unlikely, that the peripheral is receiving the radio, but the acknowledgement response is not picked up by the Link.</p>
+
+<p>In this situation, it should be taken that the peripheral device needs to be moved closer to the Link, or the batteries need to be checked.</p>
+
+<h2 id="communication-from-heating-products"><i class="icon-exchange"></i>Communication from Heating Products</h2>
+
+<p>The heating peripherals have the functionality to send out radio without being interrogated.  The radio is usually only sent out when there is something new from the peripheral to output to the Link.  The triggers for this will be the current temperature changing, the current target temperature changing or the current output changing.</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">1080</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"03:3F:D9"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1478694048</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"868R"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"statusPush"</span>,
+    <span class="hljs-string">"prod"</span>:<span class="hljs-string">"tmr1ch"</span>,
+    <span class="hljs-string">"serial"</span>:<span class="hljs-string">"D41602"</span>,
+    <span class="hljs-string">"type"</span>:<span class="hljs-string">"temp"</span>,
+    <span class="hljs-string">"batt"</span>:<span class="hljs-number">2.47</span>,
+    <span class="hljs-string">"ver"</span>:<span class="hljs-number">34</span>,
+    <span class="hljs-string">"state"</span>:<span class="hljs-string">"run"</span>,
+    <span class="hljs-string">"cTemp"</span>:<span class="hljs-number">25.0</span>,
+    <span class="hljs-string">"cTarg"</span>:<span class="hljs-number">18.0</span>,
+    <span class="hljs-string">"output"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"nTarg"</span>:<span class="hljs-number">24.0</span>,
+    <span class="hljs-string">"nSlot"</span>:<span class="hljs-string">"06:00"</span>,
+    <span class="hljs-string">"prof"</span>:<span class="hljs-number">1</span>
+}</code></pre>
+
+<p>where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>trans</td>
+  <td>1-4294967295</td>
+  <td>Transaction number of the JSON packet. Increments every transaction</td>
+</tr>
+<tr>
+  <td>mac</td>
+  <td>XX:XX:XX</td>
+  <td>Last 6 octets of Links MAC Address</td>
+</tr>
+<tr>
+  <td>time</td>
+  <td>1420070400</td>
+  <td>Timestamp of the transaction in a local UNIX time (i.e if Link is set to UTC+2, this time will be UNIX + (3600*2)</td>
+</tr>
+<tr>
+  <td>pkt</td>
+  <td>868R</td>
+  <td>This communication is a result of 868MHz radio being received</td>
+</tr>
+<tr>
+  <td>prod</td>
+  <td>tmr1ch</td>
+  <td>The type of product that is communicating is a Thermostat (tmr1ch = Timer 1 Channel)</td>
+</tr>
+<tr>
+  <td></td>
+  <td>valve</td>
+  <td>The type of product that is communicating is a TRV</td>
+</tr>
+<tr>
+  <td></td>
+  <td>electr</td>
+  <td>The type of product that is communicating is a Electric Switch</td>
+</tr>
+<tr>
+  <td>serial</td>
+  <td>ABC123</td>
+  <td>The serial number of the product which has been added</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>temp</td>
+  <td>The type of packet the Lightwave Link is sending is a “temperature” packet</td>
+</tr>
+<tr>
+  <td>batt</td>
+  <td>0.00-4.00</td>
+  <td>The battery level of the device.  This is measured in volts. The battery powered products use 2x 1.5V AA batteries and will report in 3V or greater for a full battery.  If the reading is less than 2.40V, this can be considered a low battery.</td>
+</tr>
+<tr>
+  <td>ver</td>
+  <td>0-999</td>
+  <td>The version of firmware running on the device</td>
+</tr>
+<tr>
+  <td>state</td>
+  <td><code>run</code>, <code>man</code>, <code>frost</code>, <code>comf</code>, <code>away</code>, <code>boost</code>, <code>calib</code>, <code>hday</code>, <code>stby</code></td>
+  <td>The current state/mode of the product.  Further details of this are provided in the Mode section of the documentation</td>
+</tr>
+<tr>
+  <td>cTemp</td>
+  <td>0.0-40.0</td>
+  <td>The current temperature of the product in Celsius</td>
+</tr>
+<tr>
+  <td>cTarg</td>
+  <td>0.0-60.0</td>
+  <td>The current target temperature of the product in Celsius</td>
+</tr>
+<tr>
+  <td>output</td>
+  <td>0-100</td>
+  <td>The current status of the product.  For a valve, this represents the % open that the TRV is.  For a Thermostat, <code>0</code> means that it has sent off to its child device, and <code>100</code> means that is has sent on to its child device.  For an Electric Switch, <code>0</code> means that the product is off, while <code>1</code> means that the product is on.</td>
+</tr>
+<tr>
+  <td>nTarg</td>
+  <td>0.0-40.0</td>
+  <td>The next temperature that the product will target, at the time specified in <code>nSlot</code></td>
+</tr>
+<tr>
+  <td>nSlot</td>
+  <td>HH:MM</td>
+  <td>The next time that a change is set to occur in the products schedule</td>
+</tr>
+<tr>
+  <td>prof</td>
+  <td>0-15</td>
+  <td>The profile/mode that is currently running in the product.  1-7 represent Monday-Sunday.  Other numbers are detailed in the Mode section of the documentation</td>
+</tr>
+</tbody></table>
+
+
+
+
+<h2 id="setting-temperatures"><i class="icon-gauge"></i>Setting Temperatures</h2>
+
+<p>The heating devices can all be set to target a specific temperature which will change their behaviour to attempt to reach the specified temperature by switching the device on or off.</p>
+
+<p>To set a temperature, the client should send:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs diff"><span class="hljs-change">!R_F*tPXX.X</span></code></pre>
+
+<p>where _ is the slot of the device they want to control, and X is the temperature that is desired.  The temperature must be between 0C and 40C and must be sent in 0.5C increments.</p>
+
+<p>If setting a temperature which is a round number, it is possible to send both <code>!R_F*tPXX.0</code> or <code>!R_F*tPXX</code> to achieve the same result.</p>
+
+<p>Target temperatures between 0C and 9.5C should be sent as a single whole number without a 0 prefix, such as <code>!R_F*tP5.5</code> as opposed to <code>!R_F*tP05.5</code>.</p>
+
+
+
+<h3 id="trv-and-electric-switch-settings">TRV and Electric Switch Settings</h3>
+
+<p>The TRV and Electric Switch are also capable of going to non-temperature settings where the device will stay in a certain position regardless of the temperature.  The setting is done in the same way a temperature is set, however a “fake” temperature is used.</p>
+
+<p>An Electric switch can be set to stay off by sending a target of <code>50</code>, and set to stay on by sending a target of <code>60</code>.</p>
+
+<p>A TRV can be set to open the pin in 10% increments, with 100% being fully open, and 0% being fully closed.  The target temperatures are as follows:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Target</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>50</td>
+  <td>0% Open (i.e. fully closed)</td>
+</tr>
+<tr>
+  <td>51</td>
+  <td>10% Open</td>
+</tr>
+<tr>
+  <td>52</td>
+  <td>20% Open</td>
+</tr>
+<tr>
+  <td>53</td>
+  <td>30% Open</td>
+</tr>
+<tr>
+  <td>54</td>
+  <td>40% Open</td>
+</tr>
+<tr>
+  <td>55</td>
+  <td>50% Open</td>
+</tr>
+<tr>
+  <td>56</td>
+  <td>60% Open</td>
+</tr>
+<tr>
+  <td>57</td>
+  <td>70% Open</td>
+</tr>
+<tr>
+  <td>58</td>
+  <td>80% Open</td>
+</tr>
+<tr>
+  <td>59</td>
+  <td>90% Open</td>
+</tr>
+<tr>
+  <td>60</td>
+  <td>100% Open (i.e. fully open)</td>
+</tr>
+</tbody></table>
+
+
+<blockquote>
+  <p><strong>Note</strong> <br>
+  The first party app uses TRV positions as 0, 1, 2, 3, 4 and 5 for similarity between a manual TRV so that the user has familiarity with the options.  The app uses 20% increments, where position 1 is <code>52</code>, position 2 is <code>54</code> and so on.</p>
+</blockquote>
+
+
+
+<h2 id="manual-changes"><i class="icon-right-hand"></i>Manual Changes</h2>
+
+
+
+<h3 id="thermostat">Thermostat</h3>
+
+<p>When pressing the standby/power button on the Thermostat, the target temperature will alternate between the standby temperature, and the next/current “on” block.</p>
+
+<p>i.e If the schedule is 15C setback, with 20C between 7AM-9AM and 22C between 5PM-10PM, and you press the standby/power button at 8AM, it will toggle between 20C and 15C.  If you press the button at 1PM, it will toggle between 22C and 15C.  This change will remain until the next scheduled change.</p>
+
+
+
+<h3 id="trv">TRV</h3>
+
+<p>When pressing the standby/power button on the TRV, the output will alternate between fully on or fully off for one hour only. However, the target temperature does not change. This can cause an issue for the app/client as it is not immediately apparent that the user has manually intervened.  It can be inferred by checking if the output is 0 or 100 when it should be.</p>
+
+
+
+<h3 id="electric-switch">Electric Switch</h3>
+
+<p>When pressing the standby/power button on the Electric Switch, the target will change to 50C or 60C (i.e. off or on) until the next scheduled change time.  This will be reflected in any RF packets also.</p>
+
+
+
+<h3 id="boost">Boost</h3>
+
+<p>Boost is used to increase the target temperature of a peripheral for an hour by 1.5C.  There is some intelligence in the products when increasing the temperature.  If the target is currently 20C and the current temperature is 17C, then the boost will not change the target, as the target has not actually been achieved.  If the temperature was 22C, however, then the target would adjust to be 23.5C.</p>
+
+
+
+<h2 id="setting-schedules"><i class="icon-gauge"></i>Setting Schedules</h2>
+
+<p>The heating devices can all be set to have a schedule which they will follow for each day of the week.  Each schedule should contain at least one “on” block, with a limit of five “on” blocks per day.</p>
+
+<p>To set a schedule, the client should send:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs xml">!R<span class="hljs-tag">&lt;<span class="hljs-title">SlotNo</span>&gt;</span>F*s=N<span class="hljs-tag">&lt;<span class="hljs-title">Day</span>&gt;</span>,Y<span class="hljs-tag">&lt;<span class="hljs-title">StandbyTemp</span>&gt;</span>,T<span class="hljs-tag">&lt;<span class="hljs-title">TargetTemp</span>&gt;</span>,S<span class="hljs-tag">&lt;<span class="hljs-title">StartTime</span>&gt;</span>,E<span class="hljs-tag">&lt;<span class="hljs-title">EndTime</span>&gt;</span>,T<span class="hljs-tag">&lt;<span class="hljs-title">TargetTemp</span>&gt;</span>,S<span class="hljs-tag">&lt;<span class="hljs-title">StartTime</span>&gt;</span>,E<span class="hljs-tag">&lt;<span class="hljs-title">EndTime</span>&gt;</span></code></pre>
+
+<p>Where:</p>
+
+<table>
+<thead>
+<tr>
+  <th>&nbsp;</th>
+  <th>&nbsp;</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td><strong>SlotNo</strong></td>
+  <td>The Slot Number of the device to be controlled. Valid 1 to 80</td>
+</tr>
+<tr>
+  <td><strong>Day</strong></td>
+  <td>Day of the week the schedule is referring to, with Monday being <code>1</code>, and Sunday being <code>7</code>. <code>A</code> can also be used for All Days, if a schedule for all seven days is desired</td>
+</tr>
+<tr>
+  <td><strong>StandbyTemp</strong></td>
+  <td>The temperature to target when not in a heating period</td>
+</tr>
+<tr>
+  <td><strong>TargetTemp</strong></td>
+  <td>The temperature to target for the hours specified in the next two fields</td>
+</tr>
+<tr>
+  <td><strong>StartTime</strong></td>
+  <td>The time in HH:MM format for the previously specified target temperature to begin from. MM has to be <code>00</code>, <code>15</code>, <code>30</code> or <code>45</code></td>
+</tr>
+<tr>
+  <td><strong>EndTime</strong></td>
+  <td>The time in HH:MM format for the previously specified target temperature to end at. MM has to be <code>00</code>, <code>15</code>, <code>30</code> or <code>45</code></td>
+</tr>
+<tr>
+  <td></td>
+  <td>TargetTemp, StartTime and Endtime can be repeated up to five times in each schedule</td>
+</tr>
+</tbody></table>
+
+
+<p>for example:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs fix"><span class="hljs-attribute">!R7F*s</span>=<span class="hljs-string">N2,Y15,T22.5,S09:15,E11:30,T54,S14:00,E17:30</span></code></pre>
+
+<p>would store a schedule for the device in slot 7 to occur on Tuesday where the setback temperature is 15C, and the target will be 22.5C between 09:15 and 11:30, then have a TRV target position 40% between 14:00 and 17:30.</p>
+
+<p>The heating products firmware is written in a way that has the start of the day at 06:00, and the end of a day at 05:59.  The result of this is that when saving a schedule for Thursday, any heating which is due to switch between 00:00 and 05:59 needs to be added to Wednesdays schedule.  The firmware of the heating products is not possible to be updated to alter this behaviour.</p>
+
+<p>For example, if on a Thursday, you would like to have the heating set to 15C setback temperature, and 22C between 04:00 and 09:00, and again at 17:00 to 22:00, then you would need to have a schedule for Wednesday, to ensure the 04:00-06:00 part of Thursdays morning is covered:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs fix"><span class="hljs-attribute">!R7F*s</span>=<span class="hljs-string">N3,Y15,T22,S04:00,E06:00</span></code></pre>
+
+<p>as well as any other blocks desired on Wednesday.  The Thursday command would then be:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs fix"><span class="hljs-attribute">!R7F*s</span>=<span class="hljs-string">N4,Y15,T22,S06:00,E09:00,T22,S17:00,E22:00</span></code></pre>
+
+<blockquote>
+  <p><strong>Note</strong> On earlier firmware of TRVs and Thermostats, there is an issue where an end time of 06:00 is not recognised.  The client should use 05:45 as the last possible end time.  This does result in the setback temperature running between 05:45 and 06:00, however.  It is possible for a firmware upgrade to be applied to the units if ending the block at 05:45 is not suitable.  This affect TRVs with a version less lower than 58, and Thermostats with a version less than 34. </p>
+</blockquote>
+
+
+
+<h2 id="modes"><i class="icon-list"></i>Modes</h2>
+
+<p>The heating products support the concept of different modes they can be set to.  These are then shown in any comms from the products as a “state”.  The states are:</p>
+
+<p><code>run</code>, <code>man</code>, <code>frost</code>, <code>comf</code>, <code>away</code>, <code>boost</code>, <code>calib</code>, <code>hday</code>, <code>stby</code></p>
+
+<table>
+<thead>
+<tr>
+  <th>State</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td><code>run</code></td>
+  <td>Running Mode</td>
+</tr>
+<tr>
+  <td><code>man</code></td>
+  <td>Manual Mode</td>
+</tr>
+<tr>
+  <td><code>frost</code></td>
+  <td>Frost Mode</td>
+</tr>
+<tr>
+  <td><code>comf</code></td>
+  <td>Constant (Comfort) Mode</td>
+</tr>
+<tr>
+  <td><code>away</code></td>
+  <td>Away Mode</td>
+</tr>
+<tr>
+  <td><code>boost</code></td>
+  <td>Boost Mode</td>
+</tr>
+<tr>
+  <td><code>calib</code></td>
+  <td>Calibrate Mode</td>
+</tr>
+<tr>
+  <td><code>hday</code></td>
+  <td>Holiday Mode</td>
+</tr>
+<tr>
+  <td><code>stby</code></td>
+  <td>Standby Mode</td>
+</tr>
+</tbody></table>
+
+
+
+
+<h3 id="running-mode">Running Mode</h3>
+
+<p><code>run</code> is generally one of the two standard modes you will find the devices in. <code>run</code> means that the heating device is doing its normal schedule and is in an “on” block.</p>
+
+
+
+<h3 id="manual-mode">Manual Mode</h3>
+
+<p><code>man</code> is achieved on the TRVs when a customer has pressed the boost button on the TRV and the boost has expired.  The TRV does not return back to <code>run</code> unless a battery pull has occurred.  It is suggested that man and run be treated identically.</p>
+
+
+
+<h3 id="frost-mode">Frost Mode</h3>
+
+<p><code>frost</code> is a mode on the Thermostat devices which can be achieved by the user setting this via the Mode button on the device, or from a Lightwave Link command.  It will make the Thermostat target the Frost temperature stored in the device (accessible via the physical Thermostat menu) indefinitely in firmware versions of 58 or above, or for the remainder of the current day and the entirety of the following day in firmware versions below 58.</p>
+
+
+
+<h3 id="constant-mode">Constant Mode</h3>
+
+<p><code>comf</code> is a mode on the Thermostat devices which can be achieved by the user setting this via the Mode button on the device, or from a Lightwave Link command.  It will make the Thermostat target the Constant temperature stored in the device (accessible via the physical Thermostat menu) in firmware versions of 58 or above, or for the remainder of the current day and the entirety of the following day in firmware versions below 58.</p>
+
+
+
+<h3 id="away-mode">Away Mode</h3>
+
+<p><code>away</code> is a mode on the Thermostat devices which can be achieved by the user setting this via the Mode button on the device, pressing and holding the standby/power button or from a Lightwave Link command.  It will make the Thermostat target the standby temperature stored in the device from its current schedule indefinitely in firmware versions of 58 or above, or for the remainder of the current day and the entirety of the following day in firmware versions below 58.</p>
+
+
+
+<h3 id="boost-mode">Boost Mode</h3>
+
+<p><code>boost</code> is a mode on the Thermostat, TRV and Electric Switch devices which can be achieved by the user setting this via the Boost button on the device.  It will make the Thermostat target a temperature 1.5C higher than the current target for one hour.</p>
+
+<p>There is some intelligence in the products when increasing the temperature.  If the target is currently 20C and the current temperature is 17C, then the boost will not change the target, as the target has not actually been achieved.  If the temperature was 22C, however, then the target would adjust to be 23.5C.</p>
+
+
+
+<h3 id="calibrate-mode">Calibrate Mode</h3>
+
+<p><code>calib</code> is a mode on the TRV which occurs when it is calibrating the length the pin can travel.  It will occur when the TRV is first powered up, or when the TRV hits 0% when it does not expect to (i.e. too soon or too late).  It is only a temporary state, and will return to <code>run</code> or <code>man</code> when the calibration is complete.</p>
+
+
+
+<h3 id="holiday-mode">Holiday Mode</h3>
+
+<p><code>hday</code> is a mode possible on the Thermostat where the device is put to a state where a single target temperature is maintained for a preset number of days. The temperature is able to be set on the physical device by utilising the menu options and choosing the desired holiday temperature here.</p>
+
+
+
+<h3 id="standby-mode">Standby Mode</h3>
+
+<p><code>stby</code> is a mode on the Thermostat and Electric Switch products which occurs when they are running a normal schedule, but are not in a heating block.  When the next heating block begins, the state will change to <code>run</code>.</p>
+
+
+
+<h3 id="setting-modes-from-the-lightwave-link">Setting Modes from the Lightwave Link</h3>
+
+<p>It is possible to trigger a Thermostat to enter a mode by sending a command to the Lightwave Link.  The command format for setting a Mode is:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs diff"><span class="hljs-change">!R_F*mPX</span></code></pre>
+
+<p>where _ is the slot of the device they want to control, and X is the mode that is desired.  The mode must be between 0 and 5.  The modes are:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Number</th>
+  <th>Mode</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td><code>0</code></td>
+  <td>Standby Mode</td>
+</tr>
+<tr>
+  <td><code>1</code></td>
+  <td>Running Mode</td>
+</tr>
+<tr>
+  <td><code>2</code></td>
+  <td>Away Mode</td>
+</tr>
+<tr>
+  <td><code>3</code></td>
+  <td>Frost Mode</td>
+</tr>
+<tr>
+  <td><code>4</code></td>
+  <td>Constant Mode</td>
+</tr>
+<tr>
+  <td><code>5,Y</code></td>
+  <td>Holiday Mode.  Y is used to define the number of days the Thermostat should enter Holiday mode for.  <code>!R_F*mP5,7</code> would result in Holiday mode getting set for 7 days.</td>
+</tr>
+</tbody></table>
+
+
+
+
+<h2 id="call-for-heat"><i class="icon-fire"></i>Call For Heat</h2>
+
+
+
+<h3 id="introduction">Introduction</h3>
+
+<p>Call for Heat is a feature introduced to the Lightwave Link in version 2.93 which allows the Link to turn a pre-set heating device on or off depending on the status of any other devices.  This is a concept which works with heating so that a single device can give heat to other device(s) which are dependant on the single device to warm up.  </p>
+
+<p>A standard example is a domestic house which has a combi boiler that provides heat to each radiator.  Any TRVs on these radiators can open and close depending on their own temperature and target, but they may not have any hot water to circulate.  The central heating can be controlled by a Boiler Switch &amp; Home Thermostat which are operating on a different heating schedule.  With Call for Heat, if the Link detects any of these TRVs are open and will send a command to the Home Thermostat for it to switch on until further notice.  Inversely, if all the TRVs are at or above temperature and are not open, the Link will send a command to switch the Home Thermostat off until further notice.</p>
+
+<p>The device which switches on/off based on the status of the other devices is called the “Parent”, while the devices which determine if the parent should be on or off are called the “Children”.  The Link supports 10 parents in its memory, with each parent able to have up to 8 children each.</p>
+
+<p>It is possible for a child to also be a parent for more elaborate setups.  Care must be taken to ensure a loop is not introduced where a devices child, grandchild, great grandchild etc is not a setup as a parent, grandparent etc.</p>
+
+
+
+<h3 id="setup">Setup</h3>
+
+<p>Call for Heat must be setup with pre-existing devices so it is necessary to link all the products before going through the Call for Heat setup process.  To begin the process of adding Call for Heat devices, the command structure is:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs diff"><span class="hljs-change">!RxPyF*C</span></code></pre>
+
+<p>Where <code>x</code> is the child device, and <code>y</code> is the parent.  The Link will give its standard “OK” message back if this is setup correctly.  If a the given <code>x</code> or <code>y</code> values are unknown, then this will return an “Unknown” error.</p>
+
+<p>A successful process would be:</p>
+
+
+
+<div class="sequence-diagram"><svg height="220" version="1.1" width="200.59166431427002" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="overflow: hidden; position: relative; left: -0.25px; top: -0.533203px;"><desc>Created with Raphaël 2.1.2</desc><defs><marker id="raphael-marker-endblock55-obj168" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj171" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker></defs><rect x="10" y="20" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="30" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><rect x="10" y="160" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="170" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,60L39.38333320617676,160" stroke-width="2"></path><rect x="122.00833034515381" y="20" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="132.00833129882812" y="30" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="146.2999973297119" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><rect x="122.00833034515381" y="160" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="132.00833129882812" y="170" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="146.2999973297119" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><path style="" fill="none" stroke="#000000" d="M146.2999973297119,60L146.2999973297119,160" stroke-width="2"></path><rect x="49.38333511352539" y="75" width="86.91666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="92.84166526794434" y="85" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,!R1P3F*C</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,100C39.38333320617676,100,120.19414162643307,100,141.30438699012308,100" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj168)" stroke-dasharray="0"></path><rect x="69.4749984741211" y="115" width="46.733333587646484" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="92.84166526794434" y="125" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,OK</tspan></text><path style="" fill="none" stroke="#000000" d="M146.2999973297119,140C146.2999973297119,140,65.4891889094556,140,44.37894354576561,140" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj171)" stroke-dasharray="0"></path></svg></div>
+
+<p>While a unsuccessful process would be:</p>
+
+
+
+<div class="sequence-diagram"><svg height="220" version="1.1" width="279.9416627883911" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="overflow: hidden; position: relative; left: -0.25px; top: -0.783203px;"><desc>Created with Raphaël 2.1.2</desc><defs><marker id="raphael-marker-endblock55-obj192" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker><marker id="raphael-marker-endblock55-obj195" markerHeight="5" markerWidth="5" orient="auto" refX="2.5" refY="2.5"><use xlink:href="#raphael-marker-block" transform="rotate(180 2.5 2.5) scale(1,1)" stroke-width="1.0000" fill="#000" stroke="none"></use></marker></defs><rect x="10" y="20" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="30" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><rect x="10" y="160" width="58.766666412353516" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="19.999998092651367" y="170" width="38.766666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="39.38333320617676" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Client</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,60L39.38333320617676,160" stroke-width="2"></path><rect x="201.3583288192749" y="20" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="211.3583221435547" y="30" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="225.649995803833" y="40" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><rect x="201.3583288192749" y="160" width="48.58333396911621" height="40" rx="0" ry="0" fill="none" stroke="#000000" style="" stroke-width="2"></rect><rect x="211.3583221435547" y="170" width="28.58333396911621" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="225.649995803833" y="180" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">Link</tspan></text><path style="" fill="none" stroke="#000000" d="M225.649995803833,60L225.649995803833,160" stroke-width="2"></path><rect x="89.0583267211914" y="75" width="86.91666412353516" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="132.51666450500488" y="85" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,!R2P3F*C</tspan></text><path style="" fill="none" stroke="#000000" d="M39.38333320617676,100C39.38333320617676,100,190.96410805656706,100,220.64374219475383,100" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj192)" stroke-dasharray="0"></path><rect x="49.38332748413086" y="115" width="166.26666259765625" height="20" rx="0" ry="0" fill="#ffffff" stroke="none" style=""></rect><text style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;" x="132.51666450500488" y="125" text-anchor="middle" font-family="Andale Mono, monospace" font-size="16px" stroke="none" fill="#000000"><tspan dy="5">123,123,ERR,0,"Unknown"</tspan></text><path style="" fill="none" stroke="#000000" d="M225.649995803833,140C225.649995803833,140,74.06922095344271,140,44.38958681525594,140" stroke-width="2" marker-end="url(#raphael-marker-endblock55-obj195)" stroke-dasharray="0"></path></svg></div>
+
+<p>To set up the device in slot 3 to be the parent of the devices in slots 1, 4, 5 and 8, you would send 4 commands:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs diff"><span class="hljs-change">!R1P3F*C</span>
+<span class="hljs-change">!R4P3F*C</span>
+<span class="hljs-change">!R5P3F*C</span>
+<span class="hljs-change">!R8P3F*C</span></code></pre>
+
+<p>It is not possible to remove Call for Heat children individually.  However, it is possible to remove the parent, and therefore its children by sending <code>!R_F*D</code> where <code>_</code> is the slot number of the parent device.  From there, you can then re-add the children as appropriate by adding only the children that are desired.</p>
+
+<p>To alter the example from above so that device in slot 3 is the parent of the devices in slots 1 and 8, but removing the devices in slots 4 and 5, the commands sent should be:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs mizar">!P3F*d    //Removes the parent <span class="hljs-keyword">and</span> child devices <span class="hljs-keyword">of</span> slot 3
+!R1P3F*C  //Re-adds slot 1 <span class="hljs-keyword">as</span> a child <span class="hljs-keyword">of</span> slot 3
+!R8P3F*C  //Re-adds slot 8 <span class="hljs-keyword">as</span> a child <span class="hljs-keyword">of</span> slot 3</code></pre>
+
+
+
+<h3 id="reading-the-call-for-heat-setup">Reading the Call For Heat Setup</h3>
+
+<p>It is possible to check the current parents by sending out the <code>@C</code> command.  This will return:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">152</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"XX:XX:XX"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1479900687</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"parent"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"summary"</span>,
+    <span class="hljs-string">"stat0"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"state"</span>:<span class="hljs-string">"on"</span>
+}</code></pre>
+
+<p>where the first three values are the same as other packets, and the following are:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>pkt</td>
+  <td>parent</td>
+  <td>This packet details the parent devices</td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>summary</td>
+  <td>This packet is a summary of the parent device details</td>
+</tr>
+<tr>
+  <td>stat0</td>
+  <td>255</td>
+  <td>Convert this to binary to find out which slots of the 8 slots are in use</td>
+</tr>
+<tr>
+  <td>state</td>
+  <td><code>on</code>, <code>off</code></td>
+  <td>If Call for Heat is currently on or off</td>
+</tr>
+</tbody></table>
+
+
+<p>To identify which slots are used, you will need to turn the value in <code>stat0</code> to a binary format, with the least significant bit (LSB) being the value at the right.</p>
+
+<p><strong>Examples:</strong> <br>
+<code>stat0</code> - <code>00000001</code> would indicate that the only device slot in use between 1-8 would be in slot 1. <br>
+<code>stat0</code> - <code>00000011</code> would indicate that the device slots in use between 1-8 are in slots 1 &amp; 2. <br>
+<code>stat0</code> - <code>00000100</code> would indicate that the only device slot in use between 1-8 would be in slot 3.</p>
+
+<p>With this information, it is then possible to check the information of the parent in each slot by sending <code>@?C_</code> where <code>_</code> is the number of slot you’d like to check.  <code>@?C1</code>, <code>@?C2</code>, <code>@?C3</code>…<code>@?C8</code>, for example.  The Link will then respond with:</p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang-repl">*<span class="hljs-exclamation_mark">!</span>{
+    <span class="hljs-string">"trans"</span>:<span class="hljs-number">153</span>,
+    <span class="hljs-string">"mac"</span>:<span class="hljs-string">"03:3D:6B"</span>,
+    <span class="hljs-string">"time"</span>:<span class="hljs-number">1479900702</span>,
+    <span class="hljs-string">"pkt"</span>:<span class="hljs-string">"parent"</span>,
+    <span class="hljs-string">"fn"</span>:<span class="hljs-string">"read"</span>,
+    <span class="hljs-string">"room"</span>:<span class="hljs-number">3</span>,
+    <span class="hljs-string">"child0"</span>:<span class="hljs-number">1</span>,
+    <span class="hljs-string">"child1"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"child2"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"child3"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"child4"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"child5"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"child6"</span>:<span class="hljs-number">0</span>,
+    <span class="hljs-string">"child7"</span>:<span class="hljs-number">0</span>
+}</code></pre>
+
+<p>where the first three values are the same as other packets, and the following are:</p>
+
+<table>
+<thead>
+<tr>
+  <th>Name</th>
+  <th>Value(s)</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>pkt</td>
+  <td>parent</td>
+  <td>This packet details the parent devices</td>
+</tr>
+<tr>
+  <td>fn</td>
+  <td>read</td>
+  <td>This is reading the parents details</td>
+</tr>
+<tr>
+  <td>room</td>
+  <td><code>0</code>-<code>80</code></td>
+  <td>This is the slot that this device is stored in the device table</td>
+</tr>
+<tr>
+  <td>child0</td>
+  <td><code>0</code>-<code>80</code></td>
+  <td>The slot number that the first child is stored in.  If 0, there is no child stored here</td>
+</tr>
+<tr>
+  <td>child1</td>
+  <td><code>0</code>-<code>80</code></td>
+  <td>The slot number that the second child is stored in.  If 0, there is no child stored here</td>
+</tr>
+<tr>
+  <td>child2</td>
+  <td><code>0</code>-<code>80</code></td>
+  <td>The slot number that the third child is stored in.  If 0, there is no child stored here</td>
+</tr>
+<tr>
+  <td>child3</td>
+  <td><code>0</code>-<code>80</code></td>
+  <td>The slot number that the fourth child is stored in.  If 0, there is no child stored here</td>
+</tr>
+<tr>
+  <td>child4</td>
+  <td><code>0</code>-<code>80</code></td>
+  <td>The slot number that the fifth child is stored in.  If 0, there is no child stored here</td>
+</tr>
+<tr>
+  <td>child5</td>
+  <td><code>0</code>-<code>80</code></td>
+  <td>The slot number that the sixth child is stored in.  If 0, there is no child stored here</td>
+</tr>
+<tr>
+  <td>child6</td>
+  <td><code>0</code>-<code>80</code></td>
+  <td>The slot number that the seventh child is stored in.  If 0, there is no child stored here</td>
+</tr>
+<tr>
+  <td>child7</td>
+  <td><code>0</code>-<code>80</code></td>
+  <td>The slot number that the eighth child is stored in.  If 0, there is no child stored here</td>
+</tr>
+</tbody></table>
+
+
+
+
+<h3 id="turning-call-for-heat-on-and-off">Turning Call for Heat On and Off</h3>
+
+<p>It may be necessary for a user to want to stop using Call for Heat.  This can be done at the Link level and all Call for Heat intelligence will be paused until it is switched back on.  This will result in the parent-children hierarchy remaining in place, but the actual Call for Heat automation to not enact.</p>
+
+<blockquote>
+  <p><strong>Note</strong> Be aware that when Call for Heat is switched off, the parent devices will be set to have a schedule to be permanently off and the client should either warn the user, or reimplement the users desired schedule after the command has been received.</p>
+</blockquote>
+
+<p>To switch Call for Heat off, send the command <code>!F*BP0</code>.  To switch Call for Heat On again, send <code>!F*BP1</code>.  Using the <code>@C</code> command detailed in <em>“Reading the Call For Heat Setup”</em> can allow you to see if Call for Heat is currently on or off by checking the value of <code>state</code>.</p>
+
+<p><em>Last updated 30/3/16</em></p></section>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $('.toc a').click(function(e){
+                e.preventDefault();
+                var anc = $(this).attr('href');
+                location.hash = anc;
+            });
+        });
+    </script>
+
+  </body>
+</html>
