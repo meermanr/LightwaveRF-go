@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine
+FROM golang:1.23-alpine
 
 RUN --mount=type=cache,target=/var/cache/apk/ <<EOF
   set -x
