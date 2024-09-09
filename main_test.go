@@ -82,3 +82,8 @@ Another line`,
 		})
 	}
 }
+
+func TestIsRegistered(t *testing.T) {
+	// TODO: Work out how to mock messages (... use a channel?)
+	response := `0,ERR,2,"Not yet registered. See LightwaveLink"`
+}

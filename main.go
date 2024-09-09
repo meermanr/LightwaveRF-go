@@ -57,8 +57,8 @@ func init() {
 	var err error
 
 	state_tmpl, err = template.New("test").Parse(Dedent(`
-		Constants
-		---------
+		State
+		-----
 
 		Lwl_server_port = {{.Lwl_server_port}}
 		Lwl_client_port = {{.Lwl_client_port}}
@@ -71,8 +71,6 @@ func init() {
 }
 
 func main() {
-	println("Hello, version control archeaologist!.")
-	os.Stdout.Sync()
 	data := struct {
 		Lwl_server_port int
 		Lwl_client_port int
@@ -86,6 +84,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	var inq chan string = make(chan string, 10)
+	go func() {
+		con, err := net.ListenUDP("udp", &net.UDPAddr{Port: lwl_client_port})
+		if err != nil {
+			panic(err)
+		}
+		var msg []byte = make([]byte, 4096)
+		for {
+			i, err := con.Read(msg)
+			// i, err := con.Read(msg)
+			if err != nil {
+				panic(err)
+			}
+			inq <- string(msg[:i])
+		}
+	}()
 
 	// Test connectivity
 	// :dcaffe,123,!F*p
@@ -106,4 +121,9 @@ func main() {
 	}
 	conn.Write([]byte(m))
 	conn.Close()
+
+	// time.Sleep(time.Second * 3)
+
+	ans := <-inq
+	fmt.Printf("Answer: %v", ans)
 }
