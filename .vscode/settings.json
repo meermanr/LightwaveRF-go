@@ -1,5 +1,9 @@
 {
   "cSpell.words": [
     "Lightwave"
-  ]
+  ],
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#7f8116",
+    "titleBar.inactiveBackground": "#4a4a17"
+  }
 }
