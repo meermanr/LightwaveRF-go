@@ -19,5 +19,3 @@ RUN --mount=type=cache,target=/var/cache/apk/ <<EOF
     openssh-client-default
   EOL
 EOF
-
-# ^-- blank line for consumption by continuation characters
