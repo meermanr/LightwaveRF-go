@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/meermanr/LightwaveRF-go/lwl"
+)
 
 func TestDedent(t *testing.T) {
 	type args struct {
@@ -85,5 +89,11 @@ Another line`,
 
 func TestIsRegistered(t *testing.T) {
 	// TODO: Work out how to mock messages (... use a channel?)
-	response := `0,ERR,2,"Not yet registered. See LightwaveLink"`
+	response := `*!{"trans":10064,"mac":"20:3B:85","time":1766691793,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}`
+	println("Logging response to keep the compiler quiet", response)
+
+	lwl := lwl.New()
+	println(lwl)
+	t.Log("Logging test")
+
 }
