@@ -3,8 +3,10 @@
 package lwl
 
 import (
+	"errors"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -30,7 +32,8 @@ func New() *Client {
 	c := Client{
 		sid: atomic.Int32{},
 		addr: net.UDPAddr{
-			IP:   net.IPv4bcast,
+			// IP:   net.IPv4bcast,
+			IP:   net.ParseIP("192.168.4.71"),
 			Port: lwlServerPort,
 		},
 		rx: make(chan string, 16),
@@ -61,6 +64,10 @@ func (c *Client) Listen(out chan<- string) error {
 // Send transmits a payload to the LWL, and waits for an acknowledgement
 func (c *Client) Send(payload string) error {
 	var out []string
+
+	// Generate new sid, atomically
+	sid := fmt.Sprintf("%d", c.sid.Add(1))
+
 	if len(c.mac) > 0 {
 		out = append(out, fmt.Sprintf("%x%x%x,",
 			c.mac[len(c.mac)-3],
@@ -68,7 +75,7 @@ func (c *Client) Send(payload string) error {
 			c.mac[len(c.mac)-1],
 		))
 	}
-	out = append(out, fmt.Sprintf("%d", (c.sid.Add(1)))) // Generate new sequence identifier
+	out = append(out, sid)
 	out = append(out, payload)
 
 	msg := strings.Join(out, ",")
@@ -81,15 +88,18 @@ func (c *Client) Send(payload string) error {
 
 	conn.SetReadDeadline(time.Now().Add(time.Second * 3))
 
-	println("send-tx:", msg)
+	println(sid, "send-tx:", conn.LocalAddr().String(), "->", conn.RemoteAddr().String(), msg)
 	conn.Write([]byte(msg))
 
 	b := make([]byte, 1024)
 	i, err := conn.Read(b)
 	if err != nil {
+		if errors.Is(err, os.ErrDeadlineExceeded) {
+			println(sid, "send-rx: read deadline lapsed", i, b[:i])
+		}
 		return err
 	}
-	println("send-rx:", b[:i])
+	println(sid, "send-rx:", string(b[:i]))
 
 	// TODO: Wait for response from LWL (either OK, or error)
 
