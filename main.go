@@ -42,15 +42,16 @@ FindIndent:
 
 func main() {
 	lwl := lwl.New()
-	msgs := make(chan string)
+	// spew.Dump(lwl)
+	msgs := make(chan string, 10)
 	go lwl.Listen(msgs)
 
 	// Test connectivity
 	// :dcaffe,123,!F*p
-	go lwl.Send("!F*p")
-	go lwl.Send("!F*p")
-	go lwl.Send("!F*p")
+	println("DoLegacy", lwl.Send("!F*p"))
+	println("DoLegacy", lwl.DoLegacy("!F*p"))
 
+	println("Starting main loop")
 	for {
 		msg := <-msgs
 		println(msg)
