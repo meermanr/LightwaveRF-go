@@ -44,11 +44,11 @@ FindIndent:
 
 func main() {
 	c := lwl.New()
-	// spew.Dump(lwl)
 	msgs := make(chan lwl.Response, 10)
 	go c.Listen(msgs)
 
-	c.Send("!F*xP", nil, nil)
+	// Uncomment to deregister, useful during development
+	// c.Send("!F*xP", nil, nil)
 	c.EnsureRegistered()
 
 	// Test connectivity
@@ -59,12 +59,13 @@ func main() {
 	// println(c.String())
 
 	println("Starting main loop")
+	t := time.NewTimer(10 * time.Second)
 	for {
 		select {
 		case msg := <-msgs:
-			fmt.Println(msg)
-		case <-time.After(10 * time.Second):
-			fmt.Println("pending", c.String())
+			fmt.Printf("%+v\n", msg)
+		case <-t.C:
+			fmt.Printf("%v\n", c)
 		}
 	}
 }

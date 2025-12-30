@@ -1,4 +1,4 @@
-// Package lwl implements a service for authorising and communicating with a
+// Package lwl implements (10 * time.Second)a service for authorising and communicating with a
 // LightwaveRF Link (LWL)
 package lwl
 
@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -15,6 +16,28 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 )
+
+type VMutex struct {
+	m sync.Mutex
+}
+
+func newVMutex() VMutex {
+	v := VMutex{
+		m: sync.Mutex{},
+	}
+	return v
+}
+
+func (v *VMutex) Lock() {
+	println("Lock")
+	debug.PrintStack()
+	v.m.Lock()
+}
+func (v *VMutex) Unlock() {
+	println("Unlock")
+	debug.PrintStack()
+	v.m.Unlock()
+}
 
 const lwlServerPort = 9760 // We send to this address ...
 const lwlClientPort = 9761 // ... and listen for responses on this one
@@ -29,13 +52,22 @@ func (e errNotJSON) Error() string {
 
 // Response holds a decoded JSON message from the LWL.
 // e.g. *!{"trans":12090,"mac":"20:3B:85","time":1766967067,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
+// e.g. *!{"trans":13367,"mac":"20:3B:85","time":1767129960,"type":"link","prod":"lwl","pairType":"local","msg":"success","class":"","serial":""}
 type Response struct {
-	Trans   int    `json:"trans"`
-	Mac     string `json:"mac"`
-	Time    int    `json:"time"`
+	Trans int    `json:"trans"`
+	Mac   string `json:"mac"`
+	Time  int    `json:"time"`
+
 	Pkt     string `json:"pkt"`
 	Fn      string `json:"fn"`
 	Payload string `json:"payload"`
+
+	Type     string `json:"type"`
+	Prod     string `json:"prod"`
+	PairType string `json:"pairType"`
+	Msg      string `json:"msg"`
+	Class    string `json:"class"`
+	Serial   string `json:"serial"`
 }
 
 // Client implements a communication channel with LightwaveRF Link (LWL)
@@ -54,7 +86,7 @@ type Client struct {
 	pendingJSON   map[string]chan Response
 	pendingLegacy map[string]chan string
 	// Protects pending
-	pendingLock sync.RWMutex
+	pendingLock sync.Mutex
 
 	// Serialises transmission
 	sendLock sync.Mutex
@@ -77,7 +109,7 @@ func New() *Client {
 
 		pendingJSON:   make(map[string]chan Response),
 		pendingLegacy: make(map[string]chan string),
-		pendingLock:   sync.RWMutex{},
+		pendingLock:   sync.Mutex{},
 
 		sendLock: sync.Mutex{},
 	}
@@ -136,6 +168,7 @@ func (c *Client) Listen(out chan<- Response) {
 		r, err := c.parseJSON(msg)
 		if err != nil {
 			// Not JSON, maybe legacy response?
+			println("listen.parseJSON:", err.Error())
 
 			sid, payload, err := c.parseLegacy(msg)
 			if err != nil {
@@ -145,26 +178,35 @@ func (c *Client) Listen(out chan<- Response) {
 			// Legacy response
 			// e.g. ERR,1,"Not yet registered. Send !F*p to register"
 
-			c.pendingLock.RLock()
+			c.pendingLock.Lock()
 			waiter, ok := c.pendingLegacy[sid]
-			c.pendingLock.RUnlock()
+			c.pendingLock.Unlock()
 			spew.Dump(waiter, ok)
 			if ok {
 				waiter <- payload
 			}
-		}
+		} else {
 
-		// Valid message, we'll talk to this LWL from now on
-		c.addr.IP = addr.IP
+			// Valid message, we'll talk to this LWL from now on
+			c.addr.IP = addr.IP
 
-		// Feed message to subscribers
-		c.pendingLock.RLock()
-		for _, chr := range c.pendingJSON {
-			chr <- r
+			// Feed message to subscribers, if able
+			c.pendingLock.Lock()
+			for _, chr := range c.pendingJSON {
+				select {
+				case chr <- r:
+				default:
+					// Means we were unable to write to the channel (full?)
+				}
+			}
+			c.pendingLock.Unlock()
+
+			// Feed message to user, or discard if unable
+			select {
+			case out <- r:
+			default:
+			}
 		}
-		c.pendingLock.RUnlock()
-		// Feed message to user
-		out <- r
 	}
 }
 
@@ -198,6 +240,14 @@ func (c *Client) parseLegacy(msg string) (string, string, error) {
 	return sid, payload, nil
 }
 
+func (c *Client) sendRaw(msg string) {
+	c.sendLock.Lock()
+	c.con.WriteToUDP([]byte(msg), &c.addr)
+	time.Sleep(100 * time.Millisecond)
+	c.sendLock.Unlock()
+
+}
+
 // Send transmits a payload to the LWL, and returns the sequence ID (sid) of
 // the request. If a non-nil channel is provided, it will be subscribed to
 // replies; the caller is responsible for calling Unsubscribe().
@@ -219,10 +269,7 @@ func (c *Client) Send(payload string, chr chan Response, chs chan string) string
 		c.Subscribe(sid, chr, chs)
 	}
 
-	c.sendLock.Lock()
-	c.con.WriteToUDP([]byte(msg), &c.addr)
-	time.Sleep(100 * time.Millisecond)
-	c.sendLock.Unlock()
+	c.sendRaw(msg)
 
 	return sid
 }
@@ -252,42 +299,41 @@ func (c *Client) DoLegacy(payload string) string {
 func (c *Client) EnsureRegistered() {
 	payload := "!F*p" // Request pairing (or if already paired, requests LWL version)
 
-	chr := make(chan Response)
-	chs := make(chan string)
+	chr := make(chan Response, 10)
+	chs := make(chan string, 10)
 	sid := c.Send(payload, chr, chs)
 
 	defer c.Unsubscribe(sid)
 
-	t := time.NewTimer(time.Second * 30)
-	pairingRequired := false
-	done := false
+	t := time.NewTimer(time.Second)
+	pairingRequired := true
 
-	for done != true {
+	for pairingRequired == true {
 		select {
 		case r := <-chr:
-			println("[PAIRING] LWL:", spew.Sdump(r))
-			if r.Fn == "nonRegistered" {
+			// println("[PAIRING] LWL:", spew.Sdump(r))
+			switch {
+			// *!{"trans":13366,"mac":"20:3B:85","time":1767129953,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
+
+			case r.Fn == "nonRegistered":
 				pairingRequired = true
-				done = true
+				println("Pairing required: Please press button on LightwaveLink")
+			// *!{"trans":13367,"mac":"20:3B:85","time":1767129960,"type":"link","prod":"lwl","pairType":"local","msg":"success","class":"","serial":""}
+			case r.PairType == "local" && r.Msg == "success":
+				pairingRequired = false
+				println("Pairing successful")
 			}
 		case s := <-chs:
 			// E.g. ?V="N2.94D"
-			println("Already paired with LightwaveLink", strings.TrimSpace(s))
+			// println("[PAIRING]", s)
 			if strings.HasPrefix(s, "?V=") {
+				println("Already paired with LightwaveLink", strings.TrimSpace(s))
 				pairingRequired = false
-				done = true
 			}
 		case <-t.C:
 			println("Timeout. Resending pairing request")
-			// Cleanup
-			c.Unsubscribe(sid)
-			// New pairing request
-			sid := c.Send(payload, chr, chs)
-			defer c.Unsubscribe(sid)
+			c.sendRaw(fmt.Sprintf("%s,%s", sid, payload))
+			t.Reset(10 * time.Second) // LWL pairing ends after ~15s
 		}
-	}
-
-	if pairingRequired {
-		println("Pairing required: Please press button on LightwaveLink")
 	}
 }
