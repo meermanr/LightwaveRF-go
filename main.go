@@ -48,19 +48,22 @@ func main() {
 	msgs := make(chan lwl.Response, 10)
 	go c.Listen(msgs)
 
+	c.Send("!F*xP", nil, nil)
+	c.EnsureRegistered()
+
 	// Test connectivity
 	// :dcaffe,123,!F*p
-	println("DoLegacy(@H)", c.DoLegacy("@H"))
-	println(c.String())
-	println("DoLegacy(!F*p)", c.DoLegacy("!F*p"))
-	println(c.String())
+	// println("DoLegacy(@H)", c.DoLegacy("@H"))
+	// println(c.String())
+	// println("DoLegacy(!F*p)", c.DoLegacy("!F*p"))
+	// println(c.String())
 
 	println("Starting main loop")
 	for {
 		select {
 		case msg := <-msgs:
 			fmt.Println(msg)
-		case <-time.After(time.Second):
+		case <-time.After(10 * time.Second):
 			fmt.Println("pending", c.String())
 		}
 	}

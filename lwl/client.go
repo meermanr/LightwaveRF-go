@@ -51,7 +51,8 @@ type Client struct {
 	// Outstanding transactions keyed on sid. Legacy format messages from the LWL
 	// with a matching sid will be written to the channel. Use Subscribe() to
 	// add, Unsubscribe() to remove.
-	pending map[string]chan string
+	pendingJSON   map[string]chan Response
+	pendingLegacy map[string]chan string
 	// Protects pending
 	pendingLock sync.RWMutex
 
@@ -74,8 +75,9 @@ func New() *Client {
 		},
 		con: con,
 
-		pendingLock: sync.RWMutex{},
-		pending:     make(map[string]chan string),
+		pendingJSON:   make(map[string]chan Response),
+		pendingLegacy: make(map[string]chan string),
+		pendingLock:   sync.RWMutex{},
 
 		sendLock: sync.Mutex{},
 	}
@@ -85,17 +87,19 @@ func New() *Client {
 // Subscribe stores a channel into which legacy messages from the LWL will be
 // written if they match the given sequence id, i.e. error responses to
 // commands.
-func (c *Client) Subscribe(sid string, ch chan string) {
+func (c *Client) Subscribe(sid string, chr chan Response, chs chan string) {
 	c.pendingLock.Lock()
 	defer c.pendingLock.Unlock()
-	c.pending[sid] = ch
+	c.pendingJSON[sid] = chr
+	c.pendingLegacy[sid] = chs
 }
 
 // Unsubscribe undoes Subscribe()
 func (c *Client) Unsubscribe(sid string) {
 	c.pendingLock.Lock()
 	defer c.pendingLock.Unlock()
-	delete(c.pending, sid)
+	delete(c.pendingJSON, sid)
+	delete(c.pendingLegacy, sid)
 }
 
 // Render internal state as a string
@@ -111,7 +115,7 @@ lwl.Client(
 		c.sid.Load(),
 		c.addr,
 		c.mac,
-		c.pending,
+		c.pendingLegacy,
 	)
 }
 
@@ -142,8 +146,8 @@ func (c *Client) Listen(out chan<- Response) {
 			// e.g. ERR,1,"Not yet registered. Send !F*p to register"
 
 			c.pendingLock.RLock()
-			waiter, ok := c.pending[sid]
-			c.pendingLock.Unlock()
+			waiter, ok := c.pendingLegacy[sid]
+			c.pendingLock.RUnlock()
 			spew.Dump(waiter, ok)
 			if ok {
 				waiter <- payload
@@ -153,6 +157,12 @@ func (c *Client) Listen(out chan<- Response) {
 		// Valid message, we'll talk to this LWL from now on
 		c.addr.IP = addr.IP
 
+		// Feed message to subscribers
+		c.pendingLock.RLock()
+		for _, chr := range c.pendingJSON {
+			chr <- r
+		}
+		c.pendingLock.RUnlock()
 		// Feed message to user
 		out <- r
 	}
@@ -191,7 +201,7 @@ func (c *Client) parseLegacy(msg string) (string, string, error) {
 // Send transmits a payload to the LWL, and returns the sequence ID (sid) of
 // the request. If a non-nil channel is provided, it will be subscribed to
 // replies; the caller is responsible for calling Unsubscribe().
-func (c *Client) Send(payload string, ch chan string) string {
+func (c *Client) Send(payload string, chr chan Response, chs chan string) string {
 	var out []string
 
 	// Generate new sid, atomically
@@ -205,8 +215,8 @@ func (c *Client) Send(payload string, ch chan string) string {
 
 	msg := strings.Join(out, ",")
 
-	if ch != nil {
-		c.Subscribe(sid, ch)
+	if chr != nil && chs != nil {
+		c.Subscribe(sid, chr, chs)
 	}
 
 	c.sendLock.Lock()
@@ -220,13 +230,17 @@ func (c *Client) Send(payload string, ch chan string) string {
 // DoLegacy sends a given payload, and then waits for a non-JSON response from
 // the LWL
 func (c *Client) DoLegacy(payload string) string {
-	waiter := make(chan string)
-	sid := c.Send(payload, waiter)
+	chr := make(chan Response)
+	chs := make(chan string)
+	sid := c.Send(payload, chr, chs)
 
 	defer c.Unsubscribe(sid)
 
 	select {
-	case reply := <-waiter:
+	case reply := <-chr:
+		spew.Dump(reply)
+		return ""
+	case reply := <-chs:
 		return reply
 	case <-time.After(time.Second):
 		return ""
@@ -236,5 +250,44 @@ func (c *Client) DoLegacy(payload string) string {
 // EnsureRegistered checks if the LWL accepts commands from the current host,
 // and if not begins pairing mode.
 func (c *Client) EnsureRegistered() {
+	payload := "!F*p" // Request pairing (or if already paired, requests LWL version)
 
+	chr := make(chan Response)
+	chs := make(chan string)
+	sid := c.Send(payload, chr, chs)
+
+	defer c.Unsubscribe(sid)
+
+	t := time.NewTimer(time.Second * 30)
+	pairingRequired := false
+	done := false
+
+	for done != true {
+		select {
+		case r := <-chr:
+			println("[PAIRING] LWL:", spew.Sdump(r))
+			if r.Fn == "nonRegistered" {
+				pairingRequired = true
+				done = true
+			}
+		case s := <-chs:
+			// E.g. ?V="N2.94D"
+			println("Already paired with LightwaveLink", strings.TrimSpace(s))
+			if strings.HasPrefix(s, "?V=") {
+				pairingRequired = false
+				done = true
+			}
+		case <-t.C:
+			println("Timeout. Resending pairing request")
+			// Cleanup
+			c.Unsubscribe(sid)
+			// New pairing request
+			sid := c.Send(payload, chr, chs)
+			defer c.Unsubscribe(sid)
+		}
+	}
+
+	if pairingRequired {
+		println("Pairing required: Please press button on LightwaveLink")
+	}
 }
