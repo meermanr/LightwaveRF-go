@@ -19,6 +19,14 @@ import (
 const lwlServerPort = 9760 // We send to this address ...
 const lwlClientPort = 9761 // ... and listen for responses on this one
 
+type errNotJSON struct {
+	msg string
+}
+
+func (e errNotJSON) Error() string {
+	return e.msg
+}
+
 // Response holds a decoded JSON message from the LWL.
 // e.g. *!{"trans":12090,"mac":"20:3B:85","time":1766967067,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
 type Response struct {
@@ -38,15 +46,17 @@ type Client struct {
 	addr net.UDPAddr // Unicast address of LWL
 	mac  string      // MAC address of LWL
 
-	rx chan string // Queue of messages from LWL -> Us
-	tx chan string // Queue of requests from Us -> LWL
-
 	con *net.UDPConn // UDP connection for LAN traffic
 
-	// Protects pending
-	lock sync.RWMutex
-	// Outstanding transactions keyed on sid prefix expected in LWL reply
+	// Outstanding transactions keyed on sid. Legacy format messages from the LWL
+	// with a matching sid will be written to the channel. Use Subscribe() to
+	// add, Unsubscribe() to remove.
 	pending map[string]chan string
+	// Protects pending
+	pendingLock sync.RWMutex
+
+	// Serialises transmission
+	sendLock sync.Mutex
 }
 
 // New returns a Client
@@ -59,40 +69,57 @@ func New() *Client {
 	c := Client{
 		sid: atomic.Int32{},
 		addr: net.UDPAddr{
-			IP: net.IPv4bcast,
-			// IP:   net.ParseIP("192.168.4.71"),
+			IP:   net.IPv4bcast,
 			Port: lwlServerPort,
 		},
-		rx:  make(chan string, 16),
-		tx:  make(chan string, 16),
 		con: con,
 
-		lock:    sync.RWMutex{},
-		pending: make(map[string]chan string),
+		pendingLock: sync.RWMutex{},
+		pending:     make(map[string]chan string),
+
+		sendLock: sync.Mutex{},
 	}
 	return &c
 }
 
-// Register stores a channel into which legacy messages from the LWL will be
-// written if they match the given sequence id
-func (c *Client) Register(sid string, ch chan string) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+// Subscribe stores a channel into which legacy messages from the LWL will be
+// written if they match the given sequence id, i.e. error responses to
+// commands.
+func (c *Client) Subscribe(sid string, ch chan string) {
+	c.pendingLock.Lock()
+	defer c.pendingLock.Unlock()
 	c.pending[sid] = ch
 }
 
-// Deregister undoes Register
-func (c *Client) Deregister(sid string) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+// Unsubscribe undoes Subscribe()
+func (c *Client) Unsubscribe(sid string) {
+	c.pendingLock.Lock()
+	defer c.pendingLock.Unlock()
 	delete(c.pending, sid)
 }
 
+// Render internal state as a string
+func (c *Client) String() string {
+	return spew.Sprintf(`
+lwl.Client(
+  sid:     %v
+  addr:    %v
+  mac:     %v
+  pending: %v
+)
+`,
+		c.sid.Load(),
+		c.addr,
+		c.mac,
+		c.pending,
+	)
+}
+
 // Listen captures traffic from the LWL and writes it into the given channel
-func (c *Client) Listen(out chan<- string) {
+func (c *Client) Listen(out chan<- Response) {
 	var b = make([]byte, 1024)
 	for {
-		i, err := c.con.Read(b)
+		i, addr, err := c.con.ReadFromUDP(b)
 		if err != nil {
 			if errors.Is(err, os.ErrDeadlineExceeded) {
 				continue
@@ -101,50 +128,70 @@ func (c *Client) Listen(out chan<- string) {
 		}
 
 		msg := string(b[:i])
-		println("listen:", msg)
 
-		if strings.HasPrefix(msg, "*") {
-			// JSON response
-			// e.g. *!{"trans":12090,"mac":"20:3B:85","time":1766967067,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
-			println("json")
-			if i < 2 {
-				println("ERROR: Invalid JSON from LWL, not long enough!", msg)
-				continue
-			}
-			var r Response
-			err := json.Unmarshal(b[2:i], &r)
+		r, err := c.parseJSON(msg)
+		if err != nil {
+			// Not JSON, maybe legacy response?
+
+			sid, payload, err := c.parseLegacy(msg)
 			if err != nil {
-				println("ERROR: Failed to parse JSON:", err.Error())
+				println("WARNING: Unable to parse legacy message:", msg)
 				continue
 			}
-			spew.Dump(r)
-			if len(c.mac) == 0 && len(r.Mac) > 0 {
-				c.mac = r.Mac
-			}
-		} else {
 			// Legacy response
 			// e.g. ERR,1,"Not yet registered. Send !F*p to register"
-			println("legacy")
-			sid, _, found := strings.Cut(msg, ",")
-			if !found {
-				println("WARNING: Unable to parse legacy message:", msg)
-			} else {
-				c.lock.RLock()
-				waiter, ok := c.pending[sid]
-				c.lock.Unlock()
-				spew.Dump(waiter, ok)
-				if ok {
-					waiter <- msg
-				}
+
+			c.pendingLock.RLock()
+			waiter, ok := c.pending[sid]
+			c.pendingLock.Unlock()
+			spew.Dump(waiter, ok)
+			if ok {
+				waiter <- payload
 			}
 		}
-		out <- msg
+
+		// Valid message, we'll talk to this LWL from now on
+		c.addr.IP = addr.IP
+
+		// Feed message to user
+		out <- r
 	}
 }
 
+// Parse JSON response
+func (c *Client) parseJSON(msg string) (Response, error) {
+	if !strings.HasPrefix(msg, "*") {
+		return Response{}, errNotJSON{msg: "not JSON: Does not start with literal asterisk"}
+	}
+	// JSON response
+	// e.g. *!{"trans":12090,"mac":"20:3B:85","time":1766967067,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
+	if len(msg) < 2 {
+		return Response{}, errors.New("invalid JSON: Message not long enough")
+	}
+
+	b := []byte(msg)
+	var r Response
+	err := json.Unmarshal(b[2:], &r)
+	if err != nil {
+		return r, fmt.Errorf("failed to parse JSON: %w", err)
+	}
+	return r, nil
+}
+
+func (c *Client) parseLegacy(msg string) (string, string, error) {
+	// Legacy response
+	// e.g. ERR,1,"Not yet registered. Send !F*p to register"
+	sid, payload, found := strings.Cut(msg, ",")
+	if !found {
+		return "", "", fmt.Errorf("unable to parse legacy message: %v", msg)
+	}
+	return sid, payload, nil
+}
+
 // Send transmits a payload to the LWL, and returns the sequence ID (sid) of
-// the request. The sid can be used to identify error responses (non-JSON).
-func (c *Client) Send(payload string) string {
+// the request. If a non-nil channel is provided, it will be subscribed to
+// replies; the caller is responsible for calling Unsubscribe().
+func (c *Client) Send(payload string, ch chan string) string {
 	var out []string
 
 	// Generate new sid, atomically
@@ -158,7 +205,14 @@ func (c *Client) Send(payload string) string {
 
 	msg := strings.Join(out, ",")
 
+	if ch != nil {
+		c.Subscribe(sid, ch)
+	}
+
+	c.sendLock.Lock()
 	c.con.WriteToUDP([]byte(msg), &c.addr)
+	time.Sleep(100 * time.Millisecond)
+	c.sendLock.Unlock()
 
 	return sid
 }
@@ -166,16 +220,21 @@ func (c *Client) Send(payload string) string {
 // DoLegacy sends a given payload, and then waits for a non-JSON response from
 // the LWL
 func (c *Client) DoLegacy(payload string) string {
-	sid := c.Send(payload)
 	waiter := make(chan string)
+	sid := c.Send(payload, waiter)
 
-	c.Register(sid, waiter)
-	defer c.Deregister(sid)
+	defer c.Unsubscribe(sid)
 
 	select {
 	case reply := <-waiter:
 		return reply
-	case <-time.After(time.Second * 3):
+	case <-time.After(time.Second):
 		return ""
 	}
+}
+
+// EnsureRegistered checks if the LWL accepts commands from the current host,
+// and if not begins pairing mode.
+func (c *Client) EnsureRegistered() {
+
 }

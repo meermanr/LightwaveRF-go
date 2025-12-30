@@ -2,7 +2,9 @@
 package main
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/meermanr/LightwaveRF-go/lwl"
 )
@@ -41,19 +43,25 @@ FindIndent:
 }
 
 func main() {
-	lwl := lwl.New()
+	c := lwl.New()
 	// spew.Dump(lwl)
-	msgs := make(chan string, 10)
-	go lwl.Listen(msgs)
+	msgs := make(chan lwl.Response, 10)
+	go c.Listen(msgs)
 
 	// Test connectivity
 	// :dcaffe,123,!F*p
-	println("DoLegacy", lwl.Send("!F*p"))
-	println("DoLegacy", lwl.DoLegacy("!F*p"))
+	println("DoLegacy(@H)", c.DoLegacy("@H"))
+	println(c.String())
+	println("DoLegacy(!F*p)", c.DoLegacy("!F*p"))
+	println(c.String())
 
 	println("Starting main loop")
 	for {
-		msg := <-msgs
-		println(msg)
+		select {
+		case msg := <-msgs:
+			fmt.Println(msg)
+		case <-time.After(time.Second):
+			fmt.Println("pending", c.String())
+		}
 	}
 }
