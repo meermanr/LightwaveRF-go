@@ -17,15 +17,6 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-// CmdRegister will pair the current LAN host (identified by MAC address) with
-// LWL. If already paired LWL will response with a legacy message containing
-// it's version, e.g. "?V=\"N2.94D\""
-const CmdRegister = "!F*p"
-
-// CmdDeregister will unpair the current LAN host from LWL (only works when
-// already paired)
-const CmdDeregister = "!F*xP"
-
 const lwlServerPort = 9760 // We send to this address ...
 const lwlClientPort = 9761 // ... and listen for responses on this one
 
@@ -40,28 +31,80 @@ func (e errNotJSON) Error() string {
 // Response holds a decoded JSON message from the LWL. Not all fields are used
 // by all LWL messages.
 //
-// e.g. *!{"trans":12090,"mac":"20:3B:85","time":1766967067,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
-// e.g. *!{"trans":13367,"mac":"20:3B:85","time":1767129960,"type":"link","prod":"lwl","pairType":"local","msg":"success","class":"","serial":""}
+// Sample JSON:
+//
+//	*!{"trans":12090,"mac":"20:3B:85","time":1766967067,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
+//	*!{"trans":13367,"mac":"20:3B:85","time":1767129960,"type":"link","prod":"lwl","pairType":"local","msg":"success","class":"","serial":""}
+//	*!{"trans":14619,"mac":"20:3B:85","time":1767288212,"pkt":"system","fn":"hubCall","type":"hub","prod":"lwl","fw":"N2.94D","uptime":2790197,"timeZone":0,"lat":52.18,"long":0.21,"tmrs":1,"evns":5,"run":0,"macs":1,"ip":"192.168.4.71","devs":11}
+//	*!{"trans":14674,"mac":"20:3B:85","time":1767297488,"pkt":"room","fn":"summary","stat0":255,"stat1":7,"stat2":0,"stat3":0,"stat4":0,"stat5":0,"stat6":0,"stat7":0,"stat8":0,"stat9":0}
+//	*!{"trans":14819,"mac":"20:3B:85","time":1767307528,"pkt":"room","fn":"read","slot":10,"serial":"D88002","prod":"valve"}
 type Response struct {
-	Trans int    `json:"trans"`
-	Mac   string `json:"mac"`
-	Time  int    `json:"time"`
+	// Common to all
+	Trans int32  `json:"trans"` // Transaction number of the source JSON packet. Increments every transaction. Not related to sid.
+	Mac   string `json:"mac"`   // Last 6 octets of LightwaveLink MAC address, e.g."20:3B:85"
+	Time  int32  `json:"time"`  // Timestamp of the transaction in LWL "local" Unixtime (i.e. if Link is set to UTC+2, this time will be UNIX + (3600*2))
 
-	Pkt     string `json:"pkt"`
-	Fn      string `json:"fn"`
+	// errors
+	Pkt     string `json:"pkt"` // Packet. "system", "error", "433T" to indicate a 433MHz transmission (i.e. LWL to Device), or "868R" to indicate 868MHz radio being received
+	Fn      string `json:"fn"`  // Function. "error", "system", "on", "off", "dim", "fullLock", "manualLock", "unlock", "open", "close", "stop", "ledColour", "ledColourCycle", "allOff", "moodStore", "moodRecall", "read"
 	Payload string `json:"payload"`
 
-	Type     string `json:"type"`
-	Prod     string `json:"prod"`
-	PairType string `json:"pairType"`
+	// pkt:433T (LWL stating that it is sending a command to a device via 433 MHz transmission)
+	Room  string `json:"room"`  // The room number that the command was sent to, 0-80 (inc.)
+	Dev   string `json:"dev"`   // The device number that the command was sent to
+	Param string `json:"Param"` // Not in every packet. The parameter for the function, if the function requires a parameter (i.e. dim, mood slot)
+
+	// type:link (e.g. !F*p)
+	Type     string `json:"type"`     // "link" or "unlink"
+	Prod     string `json:"prod"`     // wfl=WiFiLink (has a screen), lwl=LightwaveLink (no screen), LW920=Boiler Switch, tmr1ch=LW921=Home Thermostat (Timer 1 Channel), valve=LW922=Thermostatic Radiator Valve (TRV), electr=LW934=Electric Switch
+	PairType string `json:"pairType"` // "local" (LAN to hub), "product" (new device, e.g. TRV)
 	Msg      string `json:"msg"`
 	Class    string `json:"class"`
-	Serial   string `json:"serial"`
+	Serial   string `json:"serial"` // Identifies energy/heating device.
+
+	// type:hub (e.g. @H, hubCall)
+	Fw       string  `json:"fw"`       // Which firmware build the Link is running
+	Uptime   int32   `json:"uptime"`   // The time in seconds that the Link has been running for without a power cycle, or software restart
+	Timezone int32   `json:"timeZone"` // The current timezone of the Link in GMT (the Link automatically goes into DST). 0 is GMT, while 1 is GMT+1 and -5 is GMT-5
+	Lat      float32 `json:"lat"`      // Latitude of the Links location for dusk/dawn calculations
+	Long     float32 `json:"long"`     // Longitude of the Links location for dusk/dawn calculations
+	Timers   int32   `json:"tmrs"`     // The number of Timers stored in the Link
+	Events   int32   `json:"evns"`     // The number of Events stored in the Link
+	Macs     int32   `json:"macs"`     // The number of tablets/phones/PCs the Link is paired to
+	IP       string  `json:"ip"`       // The local IP address the Link is using
+	Devs     int32   `json:"devs"`     // The number of heating and energy devices the Link is currently paired to\
+	DawnTime int32   `json:"dawnTime"` // "Local" unixtime of dawn
+	DuskTime int32   `json:"duskTime"` // "Local" unixtime of dusk
+
+	// pkt:room
+	Stat0 uint8 `json:"stat0"` // Bitfile indicating which slots are in use. LSB=R0, MSB=R8
+	Stat1 uint8 `json:"stat1"` // Bitfile indicating which slows are in use. LSB=R9, MSB=R16
+	Stat2 uint8 `json:"stat2"` // Bitfile indicating which slows are in use. LSB=R17, MSB=R24
+	Stat3 uint8 `json:"stat3"` // Bitfile indicating which slows are in use. LSB=R25, MSB=R32
+	Stat4 uint8 `json:"stat4"` // Bitfile indicating which slows are in use. LSB=R33, MSB=R40
+	Stat5 uint8 `json:"stat5"` // Bitfile indicating which slows are in use. LSB=R41, MSB=R48
+	Stat6 uint8 `json:"stat6"` // Bitfile indicating which slows are in use. LSB=R49, MSB=R56
+	Stat7 uint8 `json:"stat7"` // Bitfile indicating which slows are in use. LSB=R57, MSB=R64
+	Stat8 uint8 `json:"stat8"` // Bitfile indicating which slows are in use. LSB=R65, MSB=R72
+	Stat9 uint8 `json:"stat9"` // Bitfile indicating which slows are in use. LSB=R73, MSB=R80
+
+	// Internal
+	json string // Original message, before it was decoded
+}
+
+func (r *Response) String() string {
+	return r.json
 }
 
 // Client implements a communication channel with LightwaveRF Link (LWL)
 type Client struct {
-	sid atomic.Int32 // Sequence ID
+	sid atomic.Int32 // Sequence ID (we tag our commands with this, so we can recognise replies)
+
+	// The hub will send replies to command twice: once unicast (i.e. direct to
+	// us) and again via broadcast. We track the transaction number so we can
+	// discard duplicates.
+
+	tid atomic.Int32 // Transaction ID (hub monotonically increases this in JSON responses)
 
 	// Discovered at runtime
 	addr net.UDPAddr // Unicast address of LWL
@@ -90,6 +133,7 @@ func New() *Client {
 
 	c := Client{
 		sid: atomic.Int32{},
+		tid: atomic.Int32{},
 		addr: net.UDPAddr{
 			IP:   net.IPv4bcast,
 			Port: lwlServerPort,
@@ -191,6 +235,14 @@ func (c *Client) handleJSON(msg string) error {
 		return err
 	}
 
+	if r.Trans <= c.tid.Load() {
+		// Duplicate message, discard
+		return nil
+	}
+
+	// Record that we've seen this transaction ID
+	c.tid.Store(r.Trans)
+
 	// Feed message to subscribers, if able
 	c.pendingLock.Lock()
 	for _, chr := range c.pendingJSON {
@@ -245,6 +297,7 @@ func (c *Client) parseJSON(msg string) (Response, error) {
 	if err != nil {
 		return r, fmt.Errorf("failed to parse JSON: %w", err)
 	}
+	r.json = msg
 	return r, nil
 }
 
@@ -318,7 +371,7 @@ func (c *Client) DoLegacy(payload string) string {
 func (c *Client) EnsureRegistered() {
 	chr := make(chan Response, 10)
 	chs := make(chan string, 10)
-	sid := c.Send(CmdRegister, chr, chs)
+	sid := c.Send(CmdRegister.String(), chr, chs)
 
 	defer c.Unsubscribe(sid)
 
@@ -353,4 +406,52 @@ func (c *Client) EnsureRegistered() {
 			t.Reset(10 * time.Second) // LWL pairing ends after ~15s
 		}
 	}
+}
+
+func (c *Client) QueryAllRadiators() error {
+	chr := make(chan Response, 10)
+	c.Subscribe("", chr, nil)
+	c.DoLegacy(CmdQueryRadiators.String())
+	var r Response
+loop:
+	for {
+		select {
+		case r = <-chr:
+			slog.Debug("QueryAllRadiators", "r", r)
+			if r.Pkt == "room" && r.Fn == "summary" {
+				slog.Info("Received radiator summary")
+				// Found it!
+				break loop
+			}
+		case <-time.After(3 * time.Second):
+			return fmt.Errorf("Timeout waiting for room summary")
+		}
+	}
+
+	// *!{"trans":14674,"mac":"20:3B:85","time":1767297488,"pkt":"room","fn":"summary","stat0":255,"stat1":7,"stat2":0,"stat3":0,"stat4":0,"stat5":0,"stat6":0,"stat7":0,"stat8":0,"stat9":0}
+	rooms := make([]uint8, 0, 80) // LWL upper limit is 80 rooms
+
+	bitfields := [...]uint8{
+		r.Stat0, r.Stat1, r.Stat2, r.Stat3, r.Stat4,
+		r.Stat5, r.Stat6, r.Stat7, r.Stat8, r.Stat9,
+	}
+
+	for stat, bits := range bitfields {
+		for bit := uint8(0); bit <= 8; bit++ {
+			mask := (uint8(1) << bit)
+			slot := (uint8(stat) * uint8(8)) + bit
+			if bits&mask != 0 {
+				rooms = append(rooms, slot)
+			}
+		}
+	}
+
+	slog.Info("Room summary", "rooms", rooms)
+
+	for room := range rooms {
+		id := fmt.Sprintf("R%d", room)
+		c.DoLegacy(CmdQueryRadiator.String(id))
+	}
+
+	return nil
 }

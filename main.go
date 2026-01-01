@@ -3,7 +3,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log/slog"
 	"os"
 	"strings"
@@ -73,26 +72,26 @@ func main() {
 	go c.Listen()
 
 	if *wantDeregister {
-		slog.Info("Deregister", "response", c.DoLegacy(lwl.CmdDeregister))
+		slog.Info("Deregister", "response", c.DoLegacy(lwl.CmdDeregister.String()))
 	}
 
 	c.EnsureRegistered()
 
-	// Test connectivity
-	// :dcaffe,123,!F*p
-	// println("DoLegacy(@H)", c.DoLegacy("@H"))
-	// println(c.String())
-	// println("DoLegacy(!F*p)", c.DoLegacy("!F*p"))
-	// println(c.String())
+	slog.Info("@H", "response", c.DoLegacy("@H"))
+
+	err := c.QueryAllRadiators()
+	if err != nil {
+		slog.Error("QueryAllRadiators", "err", err)
+	}
 
 	slog.Info("Starting main loop")
 	t := time.NewTimer(10 * time.Second)
 	for {
 		select {
 		case msg := <-msgs:
-			fmt.Printf("%+v\n", msg)
+			slog.Info("JSON Response", "json", msg.String())
 		case <-t.C:
-			fmt.Printf("%v\n", c)
+			slog.Info("Timeout", "c", c)
 		}
 	}
 }
