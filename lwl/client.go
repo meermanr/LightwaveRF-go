@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
-	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -17,27 +17,14 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-type VMutex struct {
-	m sync.Mutex
-}
+// CmdRegister will pair the current LAN host (identified by MAC address) with
+// LWL. If already paired LWL will response with a legacy message containing
+// it's version, e.g. "?V=\"N2.94D\""
+const CmdRegister = "!F*p"
 
-func newVMutex() VMutex {
-	v := VMutex{
-		m: sync.Mutex{},
-	}
-	return v
-}
-
-func (v *VMutex) Lock() {
-	println("Lock")
-	debug.PrintStack()
-	v.m.Lock()
-}
-func (v *VMutex) Unlock() {
-	println("Unlock")
-	debug.PrintStack()
-	v.m.Unlock()
-}
+// CmdDeregister will unpair the current LAN host from LWL (only works when
+// already paired)
+const CmdDeregister = "!F*xP"
 
 const lwlServerPort = 9760 // We send to this address ...
 const lwlClientPort = 9761 // ... and listen for responses on this one
@@ -50,7 +37,9 @@ func (e errNotJSON) Error() string {
 	return e.msg
 }
 
-// Response holds a decoded JSON message from the LWL.
+// Response holds a decoded JSON message from the LWL. Not all fields are used
+// by all LWL messages.
+//
 // e.g. *!{"trans":12090,"mac":"20:3B:85","time":1766967067,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
 // e.g. *!{"trans":13367,"mac":"20:3B:85","time":1767129960,"type":"link","prod":"lwl","pairType":"local","msg":"success","class":"","serial":""}
 type Response struct {
@@ -116,14 +105,21 @@ func New() *Client {
 	return &c
 }
 
-// Subscribe stores a channel into which legacy messages from the LWL will be
-// written if they match the given sequence id, i.e. error responses to
+// Subscribe stores a pair of channels into which decoded-JSON Response and
+// Legacy string messages from the LWL will be written. Legacy messages are
+// only written if they match the given sequence id, i.e. error responses to
 // commands.
-func (c *Client) Subscribe(sid string, chr chan Response, chs chan string) {
+//
+// If the input sid is an empty string, one will be allocated.
+func (c *Client) Subscribe(sid string, chr chan Response, chs chan string) string {
+	if len(sid) == 0 {
+		sid = fmt.Sprintf("%d", c.sid.Add(1))
+	}
 	c.pendingLock.Lock()
 	defer c.pendingLock.Unlock()
 	c.pendingJSON[sid] = chr
 	c.pendingLegacy[sid] = chs
+	return sid
 }
 
 // Unsubscribe undoes Subscribe()
@@ -138,21 +134,21 @@ func (c *Client) Unsubscribe(sid string) {
 func (c *Client) String() string {
 	return spew.Sprintf(`
 lwl.Client(
-  sid:     %v
-  addr:    %v
-  mac:     %v
-  pending: %v
+  sid:           %v
+  addr:          %v
+  pendingJSON:   %v
+  pendingLegacy: %v
 )
 `,
 		c.sid.Load(),
 		c.addr,
-		c.mac,
+		c.pendingJSON,
 		c.pendingLegacy,
 	)
 }
 
-// Listen captures traffic from the LWL and writes it into the given channel
-func (c *Client) Listen(out chan<- Response) {
+// Listen captures traffic from the LWL and writes it to all subscribers
+func (c *Client) Listen() {
 	var b = make([]byte, 1024)
 	for {
 		i, addr, err := c.con.ReadFromUDP(b)
@@ -165,49 +161,71 @@ func (c *Client) Listen(out chan<- Response) {
 
 		msg := string(b[:i])
 
-		r, err := c.parseJSON(msg)
-		if err != nil {
-			// Not JSON, maybe legacy response?
-			println("listen.parseJSON:", err.Error())
-
-			sid, payload, err := c.parseLegacy(msg)
-			if err != nil {
-				println("WARNING: Unable to parse legacy message:", msg)
-				continue
-			}
-			// Legacy response
-			// e.g. ERR,1,"Not yet registered. Send !F*p to register"
-
-			c.pendingLock.Lock()
-			waiter, ok := c.pendingLegacy[sid]
-			c.pendingLock.Unlock()
-			spew.Dump(waiter, ok)
-			if ok {
-				waiter <- payload
-			}
-		} else {
-
-			// Valid message, we'll talk to this LWL from now on
-			c.addr.IP = addr.IP
-
-			// Feed message to subscribers, if able
-			c.pendingLock.Lock()
-			for _, chr := range c.pendingJSON {
-				select {
-				case chr <- r:
-				default:
-					// Means we were unable to write to the channel (full?)
+		if errJSON := c.handleJSON(msg); errJSON != nil {
+			if _, ok := errJSON.(errNotJSON); ok {
+				// Not JSON. Try legacy
+				if errLegacy := c.handleLegacy(msg); errLegacy != nil {
+					// Uh-ho. No idea what this is
+					slog.Warn("Unable to parse message as either JSON or Legacy:",
+						"msg", msg,
+						"errJSON", errJSON,
+						"errLegacy", errLegacy,
+					)
+					continue // Abandon processing of this message
 				}
-			}
-			c.pendingLock.Unlock()
-
-			// Feed message to user, or discard if unable
-			select {
-			case out <- r:
-			default:
+			} else {
+				// Was JSON, but invalid in some way
+				slog.Error("Bad JSON", "errJSON", errJSON)
 			}
 		}
+
+		// Valid message, we'll talk to this LWL from now on
+		c.addr.IP = addr.IP
 	}
+}
+
+// handleJSON decodes a message into a Response, and writes it to all subscribers
+func (c *Client) handleJSON(msg string) error {
+	r, err := c.parseJSON(msg)
+	if err != nil {
+		return err
+	}
+
+	// Feed message to subscribers, if able
+	c.pendingLock.Lock()
+	for _, chr := range c.pendingJSON {
+		select {
+		case chr <- r:
+		default:
+			// Means we were unable to write to the channel (full?)
+		}
+	}
+	c.pendingLock.Unlock()
+
+	return nil
+}
+
+// Legacy response
+// e.g. ERR,1,"Not yet registered. Send !F*p to register"
+func (c *Client) handleLegacy(msg string) error {
+	// Not JSON, maybe legacy response?
+	sid, payload, err := c.parseLegacy(msg)
+	if err != nil {
+		return err
+	}
+
+	// Write message to legacy subscribers
+	c.pendingLock.Lock()
+	waiter, ok := c.pendingLegacy[sid]
+	c.pendingLock.Unlock()
+	if ok {
+		// Non-blocking write to channel
+		select {
+		case waiter <- payload:
+		default:
+		}
+	}
+	return nil
 }
 
 // Parse JSON response
@@ -237,6 +255,7 @@ func (c *Client) parseLegacy(msg string) (string, string, error) {
 	if !found {
 		return "", "", fmt.Errorf("unable to parse legacy message: %v", msg)
 	}
+	payload = strings.TrimSpace(payload)
 	return sid, payload, nil
 }
 
@@ -297,11 +316,9 @@ func (c *Client) DoLegacy(payload string) string {
 // EnsureRegistered checks if the LWL accepts commands from the current host,
 // and if not begins pairing mode.
 func (c *Client) EnsureRegistered() {
-	payload := "!F*p" // Request pairing (or if already paired, requests LWL version)
-
 	chr := make(chan Response, 10)
 	chs := make(chan string, 10)
-	sid := c.Send(payload, chr, chs)
+	sid := c.Send(CmdRegister, chr, chs)
 
 	defer c.Unsubscribe(sid)
 
@@ -311,28 +328,28 @@ func (c *Client) EnsureRegistered() {
 	for pairingRequired == true {
 		select {
 		case r := <-chr:
-			// println("[PAIRING] LWL:", spew.Sdump(r))
+			slog.Debug("Pairing JSON response", "r", r)
 			switch {
 			// *!{"trans":13366,"mac":"20:3B:85","time":1767129953,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
 
 			case r.Fn == "nonRegistered":
 				pairingRequired = true
-				println("Pairing required: Please press button on LightwaveLink")
+				slog.Info("Pairing required: Please press button on LightwaveLink")
 			// *!{"trans":13367,"mac":"20:3B:85","time":1767129960,"type":"link","prod":"lwl","pairType":"local","msg":"success","class":"","serial":""}
 			case r.PairType == "local" && r.Msg == "success":
 				pairingRequired = false
-				println("Pairing successful")
+				slog.Info("Pairing successful")
 			}
 		case s := <-chs:
 			// E.g. ?V="N2.94D"
-			// println("[PAIRING]", s)
+			slog.Debug("Pairing legacy message", "s", s)
 			if strings.HasPrefix(s, "?V=") {
-				println("Already paired with LightwaveLink", strings.TrimSpace(s))
+				slog.Info("Already paired with LightwaveLink", "s", s)
 				pairingRequired = false
 			}
 		case <-t.C:
-			println("Timeout. Resending pairing request")
-			c.sendRaw(fmt.Sprintf("%s,%s", sid, payload))
+			slog.Debug("Timeout. Resending pairing request")
+			c.sendRaw(fmt.Sprintf("%s,%s", sid, CmdRegister))
 			t.Reset(10 * time.Second) // LWL pairing ends after ~15s
 		}
 	}

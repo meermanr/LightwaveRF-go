@@ -2,12 +2,20 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log/slog"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/MatusOllah/slogcolor"
+
 	"github.com/meermanr/LightwaveRF-go/lwl"
 )
+
+var isVerbose = flag.Bool("verbose", false, "Enable display of DEBUG log messages")
+var wantDeregister = flag.Bool("unpair", false, "Unpair from LightwaveLink")
 
 // Remove leading whitespace from every line of a string. The amount of
 // whitespace is calculated from the first (non-blank) line.
@@ -43,12 +51,31 @@ FindIndent:
 }
 
 func main() {
+	// Command line arguments
+	flag.Parse()
+
+	// Logging
+	opts := slogcolor.DefaultOptions
+	switch *isVerbose {
+	case true:
+		opts.Level = slog.LevelDebug
+	case false:
+		opts.Level = slog.LevelInfo
+	}
+	slog.SetDefault(slog.New(slogcolor.NewHandler(os.Stderr, opts)))
+	slog.Debug("Debug messages look like this")
+
+	// LightwaveLink
 	c := lwl.New()
 	msgs := make(chan lwl.Response, 10)
-	go c.Listen(msgs)
+	sid := c.Subscribe("", msgs, nil)
+	defer c.Unsubscribe(sid)
+	go c.Listen()
 
-	// Uncomment to deregister, useful during development
-	// c.Send("!F*xP", nil, nil)
+	if *wantDeregister {
+		slog.Info("Deregister", "response", c.DoLegacy(lwl.CmdDeregister))
+	}
+
 	c.EnsureRegistered()
 
 	// Test connectivity
@@ -58,7 +85,7 @@ func main() {
 	// println("DoLegacy(!F*p)", c.DoLegacy("!F*p"))
 	// println(c.String())
 
-	println("Starting main loop")
+	slog.Info("Starting main loop")
 	t := time.NewTimer(10 * time.Second)
 	for {
 		select {
