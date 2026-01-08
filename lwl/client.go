@@ -3,6 +3,7 @@
 package lwl
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -149,10 +150,9 @@ func New() *Client {
 	return &c
 }
 
-// Subscribe stores a pair of channels into which decoded-JSON Response and
-// Legacy string messages from the LWL will be written. Legacy messages are
-// only written if they match the given sequence id, i.e. error responses to
-// commands.
+// Subscribe to Response and (if sid is non-empty) ACK/NACK messages.
+//
+// Returns a sequence ID which can be used with Unsubscribe.
 //
 // If the input sid is an empty string, one will be allocated.
 func (c *Client) Subscribe(sid string, chr chan Response, chs chan string) string {
@@ -315,6 +315,7 @@ func (c *Client) parseLegacy(msg string) (string, string, error) {
 func (c *Client) sendRaw(msg string) {
 	c.sendLock.Lock()
 	c.con.WriteToUDP([]byte(msg), &c.addr)
+	slog.Debug("sendRaw", "msg", msg)
 	time.Sleep(100 * time.Millisecond)
 	c.sendLock.Unlock()
 
@@ -366,6 +367,31 @@ func (c *Client) DoLegacy(payload string) string {
 	}
 }
 
+func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
+	chr := make(chan Response, 10)
+	chs := make(chan string, 10)
+	sid := c.Send(cmd.String(), chr, chs)
+	defer c.Unsubscribe(sid)
+
+	select {
+	case msg := <-chs:
+		slog.Debug("Do", "msg", msg)
+		if strings.TrimSpace(msg) != "OK" {
+			return Response{}, fmt.Errorf("Unexpected (legacy) response to command: %s", msg)
+		}
+	case r := <-chr:
+		slog.Debug("Do", "r", r)
+		if cmd.IsResponse(r) {
+			slog.Info("Do", "r", r)
+			return r, nil
+		}
+	case <-ctx.Done():
+		return Response{}, ctx.Err()
+	}
+
+	return Response{}, nil
+}
+
 // EnsureRegistered checks if the LWL accepts commands from the current host,
 // and if not begins pairing mode.
 func (c *Client) EnsureRegistered() {
@@ -402,12 +428,14 @@ func (c *Client) EnsureRegistered() {
 			}
 		case <-t.C:
 			slog.Debug("Timeout. Resending pairing request")
-			c.sendRaw(fmt.Sprintf("%s,%s", sid, CmdRegister))
+			c.sendRaw(fmt.Sprintf("%s,%v", sid, CmdRegister))
 			t.Reset(10 * time.Second) // LWL pairing ends after ~15s
 		}
 	}
 }
 
+// QueryAllRadiators queries the LWL for a list of paired devices, then
+// requests the status of each.
 func (c *Client) QueryAllRadiators() error {
 	chr := make(chan Response, 10)
 	c.Subscribe("", chr, nil)
@@ -418,7 +446,7 @@ loop:
 		select {
 		case r = <-chr:
 			slog.Debug("QueryAllRadiators", "r", r)
-			if r.Pkt == "room" && r.Fn == "summary" {
+			if CmdQueryRadiators.IsResponse(r) {
 				slog.Info("Received radiator summary")
 				// Found it!
 				break loop
@@ -439,8 +467,9 @@ loop:
 	for stat, bits := range bitfields {
 		for bit := uint8(0); bit <= 8; bit++ {
 			mask := (uint8(1) << bit)
-			slot := (uint8(stat) * uint8(8)) + bit
 			if bits&mask != 0 {
+				// Room numbers start at 1, so bit0 in stat0 refers to room 1.
+				slot := 1 + (uint8(stat) * uint8(8)) + bit
 				rooms = append(rooms, slot)
 			}
 		}
@@ -448,9 +477,12 @@ loop:
 
 	slog.Info("Room summary", "rooms", rooms)
 
-	for room := range rooms {
+	for _, room := range rooms {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		defer cancel()
+
 		id := fmt.Sprintf("R%d", room)
-		c.DoLegacy(CmdQueryRadiator.String(id))
+		c.Do(ctx, *CmdQueryRadiator.New(id))
 	}
 
 	return nil

@@ -4,29 +4,91 @@ import "fmt"
 
 // Command represents a command which can be Sent() to the LWL
 type Command struct {
-	cmd string
+	cmd        string              // Format string of transmitted command
+	opts       []any               // Format parameters of transmitted command
+	legacyOnly bool                // True if this command does NOT generate a JSON response
+	pkt        string              // Expected Response.Pkt
+	fn         string              // Expected Response.Fn
+	match      func(Response) bool // Custom IsResponse implementation, optional
+}
+
+// New returns a Command with parameters.
+//
+// Parameters are used to render the command string, for example querying the
+// status of a specific device takes a device id as a parameter. They are also
+// used to match responses, e.g. detecting a status message from a specific
+// device.
+func (c *Command) New(opts ...any) *Command {
+	out := c
+	out.opts = opts
+	return out
 }
 
 // String returns a rendered comand, ready to Send
-func (c *Command) String(opts ...any) string {
-	return fmt.Sprintf(c.cmd, opts...)
+func (c *Command) String() string {
+	return fmt.Sprintf(c.cmd, c.opts...)
+}
+
+// IsResponse checks if a given message is likely to be a response to this command.
+//
+// For example the command "@H" expects Response.Fn=="hubCall", and a status
+// query for a given device expects a status from that specific device.
+func (c *Command) IsResponse(r Response) bool {
+	switch {
+	case c.match != nil:
+		return c.match(r)
+	case c.fn != "" && c.pkt != "":
+		return r.Fn == c.fn && r.Pkt == c.pkt
+	case c.fn != "":
+		return r.Fn == c.fn
+	case c.pkt != "":
+		return r.Pkt == c.pkt
+	default:
+		return false
+	}
 }
 
 // CmdRegister will pair the current LAN host (identified by MAC address) with
 // LWL. If already paired LWL will response with a legacy message containing
 // it's version, e.g. "?V=\"N2.94D\""
-var CmdRegister = Command{cmd: "!F*p"}
+//
+//	->: 3,!F*p
+//
+// Replies if unpaired:
+//
+//	<-: 3,ERR,2,"Not yet registered. See LightwaveLink"\r\n
+//	<-: *!{"trans":19657,"mac":"20:3B:85","time":1767795432,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
+//
+// LWL then enters pairing mode, where it flashes its LED to prompt the user to push it. Upon being pushed, it will response:
+//
+//	<-: *!{"trans":19659,"mac":"20:3B:85","time":1767795442,"type":"link","prod":"lwl","pairType":"local","msg":"success","class":"","serial":""}
+//
+// If already paired:
+//
+//	<-: 3,?V="N2.94D"\r\n
+var CmdRegister = Command{cmd: "!F*p", legacyOnly: true}
 
 // CmdDeregister will unpair the current LAN host from LWL (only works when
 // already paired)
-var CmdDeregister = Command{cmd: "!F*xP"}
+//
+//	->: 2,!F*xP
+//	<-: 2,OK\n
+var CmdDeregister = Command{cmd: "!F*xP", legacyOnly: true}
 
 // CmdHubCall find out information from the Link unit to help understand its
 // behaviour (number of energy and heating devices, etc)
-var CmdHubCall = Command{cmd: "@H"}
+//
+//	->: 3,@H
+//	<-: *!{"trans":19686,"mac":"20:3B:85","time":1767795878,"pkt":"system","fn":"hubCall","type":"hub","prod":"lwl","fw":"N2.94D","uptime":3300881,"timeZone":0,"lat":52.18,"long":0.21,"tmrs":1,"evns":5,"run":0,"macs":1,"ip":"192.168.4.71","devs":11}
+//	<-: 3,OK\n
+var CmdHubCall = Command{cmd: "@H", fn: "hubCall"}
 
 // CmdHubDuskDawn finds when dusk and dawn time values used by timers
-var CmdHubDuskDawn = Command{cmd: "@D"}
+//
+//	->: 3,@D
+//	<-: *!{"trans":19994,"mac":"20:3B:85","time":1767824683,"pkt":"duskDawn","fn":"read","duskTime":1767801880,"dawnTime":1767773171}
+//	<-: 3,OK\n
+var CmdHubDuskDawn = Command{cmd: "@D", pkt: "duskDawn"}
 
 // CmdSetTimezone sets the GMT offset in integer hours. Note that the Link will
 // automatically change to DST; you do not need to account for this when
@@ -44,10 +106,16 @@ var CmdSetTimezone = Command{cmd: "!FzP%d"}
 var CmdSetLocation = Command{cmd: "!FqP\"%f,%f\""}
 
 // CmdSetHubUIBright sets the LED on the Link on, and on the LW500, brighten the screen
-var CmdSetHubUIBright = Command{cmd: "@L1"}
+//
+// ->: 3,@L1
+// <-: 3,OK\n
+var CmdSetHubUIBright = Command{cmd: "@L1", legacyOnly: true}
 
 // CmdSetHubUIDim sets the LED on the Link off, and on the LW500, dim the screen
-var CmdSetHubUIDim = Command{cmd: "@L0"}
+//
+// ->: 3,@L0
+// <-: 3,OK\n
+var CmdSetHubUIDim = Command{cmd: "@L0", legacyOnly: true}
 
 // CmdOn turns on a device. Args:
 //
@@ -182,10 +250,20 @@ var CmdPairDevice = Command{cmd: "!%sF*L"}
 var CmdUnpairDevice = Command{cmd: "!%sF*xU"}
 
 // CmdQueryRadiators finds which radiator ("room") numbers have been allocated.
-var CmdQueryRadiators = Command{cmd: "@R"}
+//
+//	->: 5,@R
+//	<-: *!{"trans":20021,"mac":"20:3B:85","time":1767830010,"pkt":"room","fn":"summary","stat0":255,"stat1":7,"stat2"90 "stat3":0,"stat4":0,"stat5":0,"stat6":0,"stat7":0,"stat8":0,"stat9":0}
+//	<-: 5,OK\n
+var CmdQueryRadiators = Command{cmd: "@R", pkt: "room", fn: "summary"}
 
 // CmdQueryRadiator instructs a specific radiator to report its product
 // information. Args:
 //
 //   - string  Room identifier, e.g. R1
-var CmdQueryRadiator = Command{cmd: "@?%s"}
+//
+// Sample data:
+//
+//	->: 13,@?R8
+//	<-: *!{"trans":20073,"mac":"20:3B:85","time":1767831552,"pkt":"room","fn":"read","slot":8,"serial":"6E8002","prod":"valve"}
+//	<-: 13,OK\n
+var CmdQueryRadiator = Command{cmd: "@?%s", pkt: "room", fn: "read"}
