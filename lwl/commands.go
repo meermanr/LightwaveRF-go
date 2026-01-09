@@ -1,6 +1,9 @@
 package lwl
 
-import "fmt"
+import (
+	"fmt"
+	"log/slog"
+)
 
 // Command represents a command which can be Sent() to the LWL
 type Command struct {
@@ -27,6 +30,11 @@ func (c *Command) New(opts ...any) *Command {
 // String returns a rendered comand, ready to Send
 func (c *Command) String() string {
 	return fmt.Sprintf(c.cmd, c.opts...)
+}
+
+// LogValue implements slog.LogValuer.
+func (c Command) LogValue() slog.Value {
+	return slog.StringValue(c.String())
 }
 
 // IsResponse checks if a given message is likely to be a response to this command.

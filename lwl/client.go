@@ -97,6 +97,11 @@ func (r *Response) String() string {
 	return r.json
 }
 
+// LogValue implements slog.LogValuer.
+func (r Response) LogValue() slog.Value {
+	return slog.StringValue(r.String())
+}
+
 // Client implements a communication channel with LightwaveRF Link (LWL)
 type Client struct {
 	sid atomic.Int32 // Sequence ID (we tag our commands with this, so we can recognise replies)
@@ -367,6 +372,7 @@ func (c *Client) DoLegacy(payload string) string {
 	}
 }
 
+// Do performs a command and returns the response, or an error.
 func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 	chr := make(chan Response, 10)
 	chs := make(chan string, 10)
@@ -375,14 +381,14 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 
 	select {
 	case msg := <-chs:
-		slog.Debug("Do", "msg", msg)
+		slog.Debug("Do", "msg", &msg)
 		if strings.TrimSpace(msg) != "OK" {
 			return Response{}, fmt.Errorf("Unexpected (legacy) response to command: %s", msg)
 		}
 	case r := <-chr:
-		slog.Debug("Do", "r", r)
+		slog.Debug("Do", "r", &r)
 		if cmd.IsResponse(r) {
-			slog.Info("Do", "r", r)
+			slog.Info("Do", "r", &r)
 			return r, nil
 		}
 	case <-ctx.Done():
@@ -407,7 +413,7 @@ func (c *Client) EnsureRegistered() {
 	for pairingRequired == true {
 		select {
 		case r := <-chr:
-			slog.Debug("Pairing JSON response", "r", r)
+			slog.Debug("Pairing JSON response", "r", &r)
 			switch {
 			// *!{"trans":13366,"mac":"20:3B:85","time":1767129953,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
 
@@ -421,9 +427,9 @@ func (c *Client) EnsureRegistered() {
 			}
 		case s := <-chs:
 			// E.g. ?V="N2.94D"
-			slog.Debug("Pairing legacy message", "s", s)
+			slog.Debug("Pairing legacy message", "s", &s)
 			if strings.HasPrefix(s, "?V=") {
-				slog.Info("Already paired with LightwaveLink", "s", s)
+				slog.Info("Already paired with LightwaveLink", "s", &s)
 				pairingRequired = false
 			}
 		case <-t.C:
@@ -445,7 +451,7 @@ loop:
 	for {
 		select {
 		case r = <-chr:
-			slog.Debug("QueryAllRadiators", "r", r)
+			slog.Debug("QueryAllRadiators", "r", &r)
 			if CmdQueryRadiators.IsResponse(r) {
 				slog.Info("Received radiator summary")
 				// Found it!
@@ -475,14 +481,21 @@ loop:
 		}
 	}
 
-	slog.Info("Room summary", "rooms", rooms)
+	slog.Info("Room summary", "rooms", &rooms)
 
 	for _, room := range rooms {
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 
 		id := fmt.Sprintf("R%d", room)
-		c.Do(ctx, *CmdQueryRadiator.New(id))
+		cmd := *CmdQueryRadiator.New(id)
+		r, err := c.Do(ctx, cmd)
+		if err != nil {
+			slog.Warn("Invalid response", "cmd", &cmd, "err", &err)
+			continue
+		}
+
+		slog.Info("Response", "cmd", &cmd, "r", &r)
 	}
 
 	return nil

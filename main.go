@@ -89,9 +89,9 @@ func main() {
 	for {
 		select {
 		case msg := <-msgs:
-			slog.Info("JSON Response", "json", msg.String())
+			slog.Info("JSON Response", "msg", &msg)
 		case <-t.C:
-			slog.Info("Timeout", "c", c)
+			slog.Info("Timeout", "c", &c)
 		}
 	}
 }
