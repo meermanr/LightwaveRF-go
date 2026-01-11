@@ -321,7 +321,7 @@ func (c *Client) sendRaw(msg string) {
 	c.sendLock.Lock()
 	c.con.WriteToUDP([]byte(msg), &c.addr)
 	slog.Debug("sendRaw", "msg", msg)
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(250 * time.Millisecond)
 	c.sendLock.Unlock()
 
 }
