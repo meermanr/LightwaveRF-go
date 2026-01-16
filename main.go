@@ -2,10 +2,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
 	"maps"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"time"
@@ -20,39 +22,6 @@ const configFile = "config.yaml"
 
 var isVerbose = flag.Bool("verbose", false, "Enable display of DEBUG log messages")
 var wantDeregister = flag.Bool("unpair", false, "Unpair from LightwaveLink")
-
-// Remove leading whitespace from every line of a string. The amount of
-// whitespace is calculated from the first (non-blank) line.
-func Dedent(in string) (out string) {
-	var indent string
-	var lines []string
-
-	// Remove exactly one leading newline, if present
-	if len(in) >= 1 && in[0] == '\n' {
-		in = in[1:]
-	}
-
-	// Determine indent of first line by scanning until first non-blank
-FindIndent:
-	for i, c := range in {
-		switch c {
-		case ' ', '\t':
-			continue
-		default:
-			indent = in[:i]
-			break FindIndent
-		}
-	}
-
-	// Strip indent from remaining lines
-	for s := range strings.SplitSeq(in, "\n") {
-		line := strings.TrimPrefix(s, indent)
-		lines = append(lines, line)
-	}
-
-	out = strings.Join(lines, "\n")
-	return
-}
 
 type config struct {
 	mu     sync.RWMutex            // Mutex
@@ -217,21 +186,28 @@ func main() {
 
 	slog.Info("@H", "response", c.DoLegacy("@H"))
 
-	err := c.QueryAllRadiators()
+	// Signal handling
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer stop()
+
+	err := c.QueryAllRadiators(ctx)
 	if err != nil {
 		slog.Error("QueryAllRadiators", "err", err)
 	}
 
 	slog.Info("Starting main loop")
-	t := time.NewTimer(10 * time.Second)
+loop:
 	for {
 		select {
 		case msg := <-msgs:
 			name := conf.seen(msg)
 			slog.Info("JSON Response", "name", name, "msg", &msg)
-		case <-t.C:
-			slog.Info("Timeout", "c", &c)
+		case <-time.After(10 * time.Second):
+			slog.Info("Timeout", "c", c, "c.Stats()", c.Stats())
 			conf.write(configFile)
+		case <-ctx.Done():
+			slog.Info("Exiting due to signal")
+			break loop
 		}
 	}
 }

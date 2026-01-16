@@ -128,6 +128,10 @@ type Client struct {
 
 	// Serialises transmission
 	sendLock sync.Mutex
+
+	// Metrics
+	latencyStatsLock sync.Mutex
+	latencyStats     map[string]*LatencyStats
 }
 
 // New returns a Client
@@ -138,8 +142,6 @@ func New() *Client {
 	}
 
 	c := Client{
-		sid: atomic.Int32{},
-		tid: atomic.Int32{},
 		addr: net.UDPAddr{
 			IP:   net.IPv4bcast,
 			Port: lwlServerPort,
@@ -148,9 +150,7 @@ func New() *Client {
 
 		pendingJSON:   make(map[string]chan Response),
 		pendingLegacy: make(map[string]chan string),
-		pendingLock:   sync.Mutex{},
-
-		sendLock: sync.Mutex{},
+		latencyStats:  make(map[string]*LatencyStats),
 	}
 	return &c
 }
@@ -321,8 +321,14 @@ func (c *Client) sendRaw(msg string) {
 	c.sendLock.Lock()
 	c.con.WriteToUDP([]byte(msg), &c.addr)
 	slog.Debug("sendRaw", "msg", msg)
-	time.Sleep(250 * time.Millisecond)
-	c.sendLock.Unlock()
+	// Rate limit sending, to avoid collisions
+	go func() {
+		// Typical response time is ~25-30ms (from WriteToUDP() returning to
+		// c.Listen() picking up a JSON response), but the LWL seems to be unable
+		// to process requests faster than every 100ms.
+		time.Sleep(125 * time.Millisecond)
+		c.sendLock.Unlock()
+	}()
 
 }
 
@@ -372,12 +378,46 @@ func (c *Client) DoLegacy(payload string) string {
 	}
 }
 
+func (c *Client) sampleCommandLatency(cmd Command, t time.Duration) {
+	c.latencyStatsLock.Lock()
+	defer c.latencyStatsLock.Unlock()
+
+	ls, ok := c.latencyStats[cmd.cmd]
+	if !ok {
+		ls = NewLatencyStats(cmd.cmd)
+		c.latencyStats[cmd.cmd] = ls
+	}
+	ls.Sample(t)
+}
+
+// Stats reports the min/mean/max times for seen commands to get a (non-error)
+// response from the LWL.
+//
+// The report is intended for human consumption.
+func (c *Client) Stats() string {
+	c.latencyStatsLock.Lock()
+	defer c.latencyStatsLock.Unlock()
+
+	s := make([]string, len(c.latencyStats))
+
+	for _, v := range c.latencyStats {
+		s = append(s, v.String())
+	}
+
+	out := strings.Join(s, "\n")
+	return out
+}
+
 // Do performs a command and returns the response, or an error.
 func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 	chr := make(chan Response, 10)
 	chs := make(chan string, 10)
 	sid := c.Send(cmd.String(), chr, chs)
 	defer c.Unsubscribe(sid)
+
+	// Send() is rate-limited, but returns as soon as transmission is complete,
+	// so start timing from when it returns.
+	start := time.Now()
 
 	select {
 	case msg := <-chs:
@@ -388,7 +428,8 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 	case r := <-chr:
 		slog.Debug("Do", "r", &r)
 		if cmd.IsResponse(r) {
-			slog.Info("Do", "r", &r)
+			slog.Debug("Do", "r", &r)
+			c.sampleCommandLatency(cmd, time.Since(start))
 			return r, nil
 		}
 	case <-ctx.Done():
@@ -413,7 +454,7 @@ func (c *Client) EnsureRegistered() {
 	for pairingRequired == true {
 		select {
 		case r := <-chr:
-			slog.Debug("Pairing JSON response", "r", &r)
+			slog.Debug("Pairing JSON response", "r", r)
 			switch {
 			// *!{"trans":13366,"mac":"20:3B:85","time":1767129953,"pkt":"error","fn":"nonRegistered","payload":"Not yet registered. See LightwaveLink"}
 
@@ -427,9 +468,9 @@ func (c *Client) EnsureRegistered() {
 			}
 		case s := <-chs:
 			// E.g. ?V="N2.94D"
-			slog.Debug("Pairing legacy message", "s", &s)
+			slog.Debug("Pairing legacy message", "s", s)
 			if strings.HasPrefix(s, "?V=") {
-				slog.Info("Already paired with LightwaveLink", "s", &s)
+				slog.Info("Already paired with LightwaveLink", "s", s)
 				pairingRequired = false
 			}
 		case <-t.C:
@@ -442,24 +483,12 @@ func (c *Client) EnsureRegistered() {
 
 // QueryAllRadiators queries the LWL for a list of paired devices, then
 // requests the status of each.
-func (c *Client) QueryAllRadiators() error {
+func (c *Client) QueryAllRadiators(ctx context.Context) error {
 	chr := make(chan Response, 10)
 	c.Subscribe("", chr, nil)
-	c.DoLegacy(CmdQueryRadiators.String())
-	var r Response
-loop:
-	for {
-		select {
-		case r = <-chr:
-			slog.Debug("QueryAllRadiators", "r", &r)
-			if CmdQueryRadiators.IsResponse(r) {
-				slog.Info("Received radiator summary")
-				// Found it!
-				break loop
-			}
-		case <-time.After(3 * time.Second):
-			return fmt.Errorf("Timeout waiting for room summary")
-		}
+	r, err := c.Do(ctx, CmdQueryRadiators)
+	if err != nil {
+		slog.Error("Failed to query radiators: %w")
 	}
 
 	// *!{"trans":14674,"mac":"20:3B:85","time":1767297488,"pkt":"room","fn":"summary","stat0":255,"stat1":7,"stat2":0,"stat3":0,"stat4":0,"stat5":0,"stat6":0,"stat7":0,"stat8":0,"stat9":0}
@@ -484,14 +513,14 @@ loop:
 	slog.Info("Room summary", "rooms", &rooms)
 
 	for _, room := range rooms {
-		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		doCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
 
 		id := fmt.Sprintf("R%d", room)
 		cmd := *CmdQueryRadiator.New(id)
-		r, err := c.Do(ctx, cmd)
+		r, err := c.Do(doCtx, cmd)
 		if err != nil {
-			slog.Warn("Invalid response", "cmd", &cmd, "err", &err)
+			slog.Warn("Invalid response", "cmd", &cmd, "err", err)
 			continue
 		}
 

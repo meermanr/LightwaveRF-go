@@ -8,3 +8,7 @@ monitor:
 # Extract JSON messages from log
 json:
 	@sed -ne 's/^.*\*!\({.*}$$\)/\1/p' lwl.log
+
+# Run tests
+test:
+	go test --shuffle=on ./...
