@@ -115,6 +115,13 @@ func (c *config) write(fn string) error {
 	return nil
 }
 
+func NewConfig() *config {
+	return &config{
+		names:  make(map[string]string),
+		status: make(map[string]lwl.Response),
+	}
+}
+
 // seen records the given status, and returns the name entry from the
 // configuration file (which may be empty)
 func (c *config) seen(status lwl.Response) string {
@@ -151,7 +158,7 @@ func main() {
 	slog.Debug("Debug messages look like this")
 
 	// Config
-	conf := config{}
+	conf := NewConfig()
 	if err := conf.load(configFile); err != nil {
 		switch {
 		case os.IsNotExist(err):
@@ -204,7 +211,12 @@ loop:
 			slog.Info("JSON Response", "name", name, "msg", &msg)
 		case <-time.After(10 * time.Second):
 			slog.Info("Timeout", "c", c, "c.Stats()", c.Stats())
-			conf.write(configFile)
+			err = conf.write(configFile)
+			if err != nil {
+				slog.Error("Failed to write out configuration file", "fn", configFile, "err", err)
+				return
+			}
+
 		case <-ctx.Done():
 			slog.Info("Exiting due to signal")
 			break loop
