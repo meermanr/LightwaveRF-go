@@ -51,6 +51,8 @@ func (c *config) load(fn string) error {
 }
 
 func (c *config) write(fn string) error {
+	// TODO: Atomically replace config, so if things go wrong the original is
+	// preserved
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

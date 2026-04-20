@@ -39,6 +39,11 @@ func (e errNotJSON) Error() string {
 //	*!{"trans":14619,"mac":"20:3B:85","time":1767288212,"pkt":"system","fn":"hubCall","type":"hub","prod":"lwl","fw":"N2.94D","uptime":2790197,"timeZone":0,"lat":52.18,"long":0.21,"tmrs":1,"evns":5,"run":0,"macs":1,"ip":"192.168.4.71","devs":11}
 //	*!{"trans":14674,"mac":"20:3B:85","time":1767297488,"pkt":"room","fn":"summary","stat0":255,"stat1":7,"stat2":0,"stat3":0,"stat4":0,"stat5":0,"stat6":0,"stat7":0,"stat8":0,"stat9":0}
 //	*!{"trans":14819,"mac":"20:3B:85","time":1767307528,"pkt":"room","fn":"read","slot":10,"serial":"D88002","prod":"valve"}
+//	*!{"trans":93136,"mac":"20:3B:85","time":1776726001,"pkt":"868R","fn":"statusPush","prod":"valve","serial":"24C702","type":"temp","batt":3.03,"ver":58,"state":"run","cTemp":19.4,"cTarg":19.0,"output":0,"nTarg":17.0,"nSlot":"00:00","prof":1}
+//
+// FIXME: Payload is sometimes a number, othertimes a string!
+//
+//	*!{"trans":93150,"mac":"20:3B:85","time":1776726215,"pkt":"868R","fn":"ack","status":"success","attempts":1,"packet":208,"type":"log","payload":208}
 type Response struct {
 	// Common to all
 	Trans int32  `json:"trans"` // Transaction number of the source JSON packet. Increments every transaction. Not related to sid.
@@ -51,7 +56,7 @@ type Response struct {
 	Payload string `json:"payload"`
 
 	// pkt:433T (LWL stating that it is sending a command to a device via 433 MHz transmission)
-	Room  string `json:"room"`  // The room number that the command was sent to, 0-80 (inc.)
+	Room  int    `json:"room"`  // The room number that the command was sent to, 0-80 (inc.)
 	Dev   string `json:"dev"`   // The device number that the command was sent to
 	Param string `json:"Param"` // Not in every packet. The parameter for the function, if the function requires a parameter (i.e. dim, mood slot)
 
@@ -224,7 +229,7 @@ func (c *Client) Listen() {
 				}
 			} else {
 				// Was JSON, but invalid in some way
-				slog.Error("Bad JSON", "errJSON", errJSON)
+				slog.Error("Bad JSON", "errJSON", errJSON, "msg", msg)
 			}
 		}
 
