@@ -3,37 +3,41 @@ package main
 
 import (
 	"context"
-	"flag"
+	"errors"
+	"fmt"
 	"log/slog"
-	"maps"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/meermanr/LightwaveRF-go/lwl"
 
 	"github.com/MatusOllah/slogcolor"
+	flag "github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 )
 
 const configFile = "config.yaml"
 
-var isVerbose = flag.Bool("verbose", false, "Enable display of DEBUG log messages")
+var isVerbose = flag.BoolP("verbose", "v", false, "Enable display of DEBUG log messages")
 var wantDeregister = flag.Bool("unpair", false, "Unpair from LightwaveLink")
 
 type config struct {
-	mu     sync.RWMutex            // Mutex
-	names  map[string]string       // Serial -> Name, e.g. "24C702" -> "Master Bedroom"
-	status map[string]lwl.Response // Serial -> most recent statusPush
-	yaml   yaml.Node               // Decoded YAML, inc. comments
+	mu        sync.RWMutex            // Mutex
+	names     map[string]string       // Serial -> Name, e.g. "24C702" -> "Master Bedroom"
+	status    map[string]lwl.Response // Serial -> most recent statusPush
+	yaml      yaml.Node               // Decoded YAML, inc. comments
+	fn        string                  // File name, e.g. config.yaml
+	persisted map[string]bool         // Serial -> bool, tracks which names are present in fn
 }
 
 func (c *config) load(fn string) error {
-	data, err := os.ReadFile(fn)
+	c.fn = fn
+	data, err := os.ReadFile(c.fn)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load configuration file %v: %w", c.fn, err)
 	}
 
 	c.mu.Lock()
@@ -41,86 +45,109 @@ func (c *config) load(fn string) error {
 
 	// Decode into yaml.Node, preserving comments et  al
 	if err := yaml.Unmarshal(data, &c.yaml); err != nil {
-		return err
+		return fmt.Errorf("failed to parse configuration file %v: %w", c.fn, err)
 	}
+
 	// Extract just the data
 	if err := yaml.Unmarshal(data, &c.names); err != nil {
-		return err
+		return fmt.Errorf("failed to parse configuration file %v: %w", c.fn, err)
 	}
+
+	// Mark names which are already persisted in the configuration file
+	for n := range c.names {
+		c.persisted[n] = true
+	}
+
 	return nil
 }
 
-func (c *config) write(fn string) error {
+// write appends new devices to a configuration file previously read by
+// `.load()`
+func (c *config) write() (err error) {
+	// Desired YAML format is a flat mapping from serial string to name string,
+	// e.g.:
+	//
+	// 24C702: Master bedroom
+	// 47C702: Front door
+
 	// TODO: Atomically replace config, so if things go wrong the original is
 	// preserved
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Find names not in original config
-	newNames := maps.Clone(c.names)
-
-	// Find (or create) root mapping of serial -> name
-	var mapping *yaml.Node
-	if len(c.yaml.Content) == 0 {
-		// Add a mapping node
-		mapping = &yaml.Node{
-			Kind: yaml.MappingNode,
+	newNames := make(map[string]string, 10)
+	for n := range c.names {
+		_, found := c.persisted[n]
+		if !found {
+			value := c.names[n]
+			newNames[n] = value
 		}
-		c.yaml.Content = append(c.yaml.Content, mapping)
-	} else {
-		mapping = c.yaml.Content[0]
-	}
-
-	// mapping.Content is a list of [key, value, key, value, ...]
-	for i := 0; i < len(mapping.Content); i += 2 {
-		k := mapping.Content[i]
-		delete(newNames, k.Value)
 	}
 
 	if len(newNames) == 0 {
-		slog.Debug("Not writing out config, as no new data to add", "fn", configFile)
+		slog.Debug("Not writing out config, as no new data to add", "fn", c.fn)
 		return nil
 	}
 
+	spew.Dump("newNames", newNames)
+
 	// Append missing names to YAML document
-	for k, v := range newNames {
-		yk := &yaml.Node{
-			Kind:  yaml.ScalarNode,
-			Value: k,
-			Tag:   "!!str",
-			Style: yaml.DoubleQuotedStyle,
-		}
-		yv := &yaml.Node{
-			Kind:  yaml.ScalarNode,
-			Value: v,
-			Tag:   "!!str",
-			Style: yaml.DoubleQuotedStyle,
-		}
-		mapping.Content = append(mapping.Content, yk, yv)
+	new_yaml_data, err := yaml.Marshal(newNames)
+	if err != nil {
+		return fmt.Errorf("failed to encode new names, %v: %w", newNames, err)
 	}
 
-	f, err := os.CreateTemp(".", strings.Join([]string{".", fn, "*"}, ""))
+	f, err := os.CreateTemp(".", "."+c.fn+"*")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(f.Name())
+	defer func() {
+		if err != nil {
+			e := os.Remove(f.Name())
+			if e != nil {
+				slog.Error("failed to clean-up temporary file during aborted configuration file write", "err", e)
+			}
+		}
+	}()
 
-	enc := yaml.NewEncoder(f)
-	enc.SetIndent(2)
-	defer enc.Close()
-
-	if err := enc.Encode(&c.yaml); err != nil {
-		return err
+	// Copy original config to temporary file
+	orig_yaml_data, err := os.ReadFile(c.fn)
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		// Ignore. We'll simply make a new config from scratch
+	case err != nil:
+		return fmt.Errorf("failed to read original configuration file: %w", err)
 	}
 
-	os.Rename(f.Name(), fn)
+	_, err = f.Write(orig_yaml_data)
+	if err != nil {
+		return fmt.Errorf("failed to copy original config data before appending: %w", err)
+	}
+
+	// Append new data to temporary file
+	_, err = f.Write(new_yaml_data)
+	if err != nil {
+		return fmt.Errorf("failed to write out encoded YAML data: %w", err)
+	}
+
+	// Atomically replace configuration file
+	err = os.Rename(f.Name(), c.fn)
+	if err != nil {
+		return fmt.Errorf("failed to write out new config: %w", err)
+	}
+
+	for n := range newNames {
+		c.persisted[n] = true
+	}
+
 	return nil
 }
 
 func NewConfig() *config {
 	return &config{
-		names:  make(map[string]string),
-		status: make(map[string]lwl.Response),
+		names:     make(map[string]string),
+		status:    make(map[string]lwl.Response),
+		persisted: make(map[string]bool),
 	}
 }
 
@@ -163,17 +190,17 @@ func main() {
 	conf := NewConfig()
 	if err := conf.load(configFile); err != nil {
 		switch {
-		case os.IsNotExist(err):
-			slog.Warn("Configuration file does not exist.", "fn", configFile)
+		case errors.Is(err, os.ErrNotExist):
+			slog.Warn("Configuration file does not exist, will create later.", "fn", configFile)
 		default:
-			slog.Error("Unable to load configuration file", "fn", configFile, "err", err)
+			slog.Error("unable to load configuration file", "fn", configFile, "err", err)
 		}
 	} else {
 		slog.Debug("Loaded configuration.", "fn", configFile)
 	}
 
 	defer func() {
-		if err := conf.write(configFile); err != nil {
+		if err := conf.write(); err != nil {
 			slog.Error("Error writing out configuration file", "fn", configFile, "err", err)
 		} else {
 			slog.Info("Wrote out config", "fn", configFile)
@@ -188,20 +215,31 @@ func main() {
 	go c.Listen()
 
 	if *wantDeregister {
-		slog.Info("Deregister", "response", c.DoLegacy(lwl.CmdDeregister.String()))
+		slog.Info("Deregister", "response", c.DoLegacy(lwl.CmdDeregister))
 	}
 
 	c.EnsureRegistered()
-
-	slog.Info("@H", "response", c.DoLegacy("@H"))
 
 	// Signal handling
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
-	err := c.QueryAllRadiators(ctx)
+	r, err := c.Do(ctx, lwl.CmdHubCall)
 	if err != nil {
-		slog.Error("QueryAllRadiators", "err", err)
+		slog.Error("HubCall failed", "err", err)
+	}
+	slog.Info("HubCall", "response", &r)
+
+	// HACK: Remove this once we work out why R1 (stairs) never responds first time
+	r, err = c.Do(ctx, lwl.CmdQueryRadiator.New("R1"))
+	if err != nil {
+		slog.Error("Query R1 failed", "err", err)
+	}
+	slog.Info("Query R1", "response", &r)
+
+	err = c.QueryAllRadiators(ctx)
+	if err != nil {
+		slog.Error("QueryAllRadiators failed", "err", err)
 	}
 
 	slog.Info("Starting main loop")
@@ -213,7 +251,7 @@ loop:
 			slog.Info("JSON Response", "name", name, "msg", &msg)
 		case <-time.After(10 * time.Second):
 			slog.Info("Timeout", "c", c, "c.Stats()", c.Stats())
-			err = conf.write(configFile)
+			err = conf.write()
 			if err != nil {
 				slog.Error("Failed to write out configuration file", "fn", configFile, "err", err)
 				return

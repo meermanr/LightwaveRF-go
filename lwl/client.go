@@ -21,6 +21,11 @@ import (
 const lwlServerPort = 9760 // We send to this address ...
 const lwlClientPort = 9761 // ... and listen for responses on this one
 
+// Typical response time is ~25-30ms (from WriteToUDP() returning to c.Listen()
+// picking up a JSON response), but the LWL seems to be unable to process
+// requests faster than every 100ms.
+var defaultTimeout = 3 * time.Second
+
 type errNotJSON struct {
 	msg string
 }
@@ -44,6 +49,11 @@ func (e errNotJSON) Error() string {
 // FIXME: Payload is sometimes a number, othertimes a string!
 //
 //	*!{"trans":93150,"mac":"20:3B:85","time":1776726215,"pkt":"868R","fn":"ack","status":"success","attempts":1,"packet":208,"type":"log","payload":208}
+//
+// NOTE: Commands from LightwaveRF app look like this:
+//
+//	*!{"trans":99520,"mac":"20:3B:85","time":1777755282,"pkt":"868T","fn":"setTarget","room":1,"temp":15.5,"minutes":0,"packet":211}
+//	*!{"trans":99521,"mac":"20:3B:85","time":1777755284,"pkt":"868R","fn":"statusOn","prod":"valve","serial":"DCC302","type":"temp","batt":2.94,"ver":58,"state":"run","cTemp":20.5,"cTarg":16.0,"output":0,"nTarg":16.5,"nSlot":"09:00","prof":6}
 type Response struct {
 	// Common to all
 	Trans int32  `json:"trans"` // Transaction number of the source JSON packet. Increments every transaction. Not related to sid.
@@ -121,7 +131,8 @@ type Client struct {
 	addr net.UDPAddr // Unicast address of LWL
 	mac  string      // MAC address of LWL
 
-	con *net.UDPConn // UDP connection for LAN traffic
+	con    *net.UDPConn  // UDP connection for LAN traffic
+	wakeUp chan struct{} // Signals when LWL traffic is received (used by sendRaw() rate-limiter)
 
 	// Outstanding transactions keyed on sid. Legacy format messages from the LWL
 	// with a matching sid will be written to the channel. Use Subscribe() to
@@ -151,7 +162,8 @@ func New() *Client {
 			IP:   net.IPv4bcast,
 			Port: lwlServerPort,
 		},
-		con: con,
+		con:    con,
+		wakeUp: make(chan struct{}, 0), // Unbuffered
 
 		pendingJSON:   make(map[string]chan Response),
 		pendingLegacy: make(map[string]chan string),
@@ -217,7 +229,18 @@ func (c *Client) Listen() {
 
 		if errJSON := c.handleJSON(msg); errJSON != nil {
 			if _, ok := errJSON.(errNotJSON); ok {
-				// Not JSON. Try legacy
+				// Not JSON
+
+				// Unblock sendRaw rate-limiter, because most common legacy message is
+				// "OK", which signals all JSON responses have been send (broadcast +
+				// unicast)
+				select {
+				case c.wakeUp <- struct{}{}:
+				default:
+					// Means sendRaw wasn't rate limited
+				}
+
+				// Try parsing as Legacy message
 				if errLegacy := c.handleLegacy(msg); errLegacy != nil {
 					// Uh-ho. No idea what this is
 					slog.Warn("Unable to parse message as either JSON or Legacy:",
@@ -260,6 +283,7 @@ func (c *Client) handleJSON(msg string) error {
 		case chr <- r:
 		default:
 			// Means we were unable to write to the channel (full?)
+			slog.Warn("handleJSON unable to write msg to subscriber", "msg", msg, "chr", chr)
 		}
 	}
 	c.pendingLock.Unlock()
@@ -322,16 +346,24 @@ func (c *Client) parseLegacy(msg string) (string, string, error) {
 	return sid, payload, nil
 }
 
-func (c *Client) sendRaw(msg string) {
+func (c *Client) sendRaw(msg string, ttl time.Duration) {
 	c.sendLock.Lock()
-	c.con.WriteToUDP([]byte(msg), &c.addr)
+	_, err := c.con.WriteToUDP([]byte(msg), &c.addr)
+	if err != nil {
+		slog.Error("sendRaw WriteToUDP failed", "err", err)
+	}
 	slog.Debug("sendRaw", "msg", msg)
 	// Rate limit sending, to avoid collisions
 	go func() {
-		// Typical response time is ~25-30ms (from WriteToUDP() returning to
-		// c.Listen() picking up a JSON response), but the LWL seems to be unable
-		// to process requests faster than every 100ms.
-		time.Sleep(125 * time.Millisecond)
+		if ttl == 0 {
+			ttl = defaultTimeout
+		}
+		select {
+		case <-c.wakeUp:
+			slog.Debug("sendRaw wakeUp")
+		case <-time.After(ttl):
+			slog.Debug("sendRaw ttl")
+		}
 		c.sendLock.Unlock()
 	}()
 
@@ -340,7 +372,7 @@ func (c *Client) sendRaw(msg string) {
 // Send transmits a payload to the LWL, and returns the sequence ID (sid) of
 // the request. If a non-nil channel is provided, it will be subscribed to
 // replies; the caller is responsible for calling Unsubscribe().
-func (c *Client) Send(payload string, chr chan Response, chs chan string) string {
+func (c *Client) Send(payload Command, chr chan Response, chs chan string) string {
 	var out []string
 
 	// Generate new sid, atomically
@@ -350,7 +382,7 @@ func (c *Client) Send(payload string, chr chan Response, chs chan string) string
 		out = append(out, fmt.Sprintf(":%s", c.mac))
 	}
 	out = append(out, sid)
-	out = append(out, payload)
+	out = append(out, payload.String())
 
 	msg := strings.Join(out, ",")
 
@@ -358,14 +390,14 @@ func (c *Client) Send(payload string, chr chan Response, chs chan string) string
 		c.Subscribe(sid, chr, chs)
 	}
 
-	c.sendRaw(msg)
+	c.sendRaw(msg, payload.ttl)
 
 	return sid
 }
 
 // DoLegacy sends a given payload, and then waits for a non-JSON response from
 // the LWL
-func (c *Client) DoLegacy(payload string) string {
+func (c *Client) DoLegacy(payload Command) string {
 	chr := make(chan Response)
 	chs := make(chan string)
 	sid := c.Send(payload, chr, chs)
@@ -417,7 +449,7 @@ func (c *Client) Stats() string {
 func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 	chr := make(chan Response, 10)
 	chs := make(chan string, 10)
-	sid := c.Send(cmd.String(), chr, chs)
+	sid := c.Send(cmd, chr, chs)
 	defer c.Unsubscribe(sid)
 
 	// Send() is rate-limited, but returns as soon as transmission is complete,
@@ -428,7 +460,7 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 	case msg := <-chs:
 		slog.Debug("Do", "msg", &msg)
 		if strings.TrimSpace(msg) != "OK" {
-			return Response{}, fmt.Errorf("Unexpected (legacy) response to command: %s", msg)
+			return Response{}, fmt.Errorf("unexpected (legacy) response to command: %s", msg)
 		}
 	case r := <-chr:
 		slog.Debug("Do", "r", &r)
@@ -439,6 +471,9 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 		}
 	case <-ctx.Done():
 		return Response{}, ctx.Err()
+	case <-time.After(cmd.ttl):
+		slog.Debug("Do retry timeout", "ttl", cmd.ttl)
+		sid = c.Send(cmd, chr, chs)
 	}
 
 	return Response{}, nil
@@ -449,14 +484,14 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 func (c *Client) EnsureRegistered() {
 	chr := make(chan Response, 10)
 	chs := make(chan string, 10)
-	sid := c.Send(CmdRegister.String(), chr, chs)
+	sid := c.Send(CmdRegister, chr, chs)
 
 	defer c.Unsubscribe(sid)
 
 	t := time.NewTimer(time.Second)
 	pairingRequired := true
 
-	for pairingRequired == true {
+	for pairingRequired {
 		select {
 		case r := <-chr:
 			slog.Debug("Pairing JSON response", "r", r)
@@ -480,7 +515,8 @@ func (c *Client) EnsureRegistered() {
 			}
 		case <-t.C:
 			slog.Debug("Timeout. Resending pairing request")
-			c.sendRaw(fmt.Sprintf("%s,%v", sid, CmdRegister))
+			// TODO: Retest this. It used to use sendRaw, but I changed it to use Send() with ttl
+			sid = c.Send(CmdRegister, chr, chs)
 			t.Reset(10 * time.Second) // LWL pairing ends after ~15s
 		}
 	}
@@ -493,7 +529,7 @@ func (c *Client) QueryAllRadiators(ctx context.Context) error {
 	c.Subscribe("", chr, nil)
 	r, err := c.Do(ctx, CmdQueryRadiators)
 	if err != nil {
-		slog.Error("Failed to query radiators: %w")
+		slog.Error("Failed to query radiators", "err", err)
 	}
 
 	// *!{"trans":14674,"mac":"20:3B:85","time":1767297488,"pkt":"room","fn":"summary","stat0":255,"stat1":7,"stat2":0,"stat3":0,"stat4":0,"stat5":0,"stat6":0,"stat7":0,"stat8":0,"stat9":0}
@@ -522,7 +558,7 @@ func (c *Client) QueryAllRadiators(ctx context.Context) error {
 		defer cancel()
 
 		id := fmt.Sprintf("R%d", room)
-		cmd := *CmdQueryRadiator.New(id)
+		cmd := CmdQueryRadiator.New(id)
 		r, err := c.Do(doCtx, cmd)
 		if err != nil {
 			slog.Warn("Invalid response", "cmd", &cmd, "err", err)

@@ -3,6 +3,7 @@ package lwl
 import (
 	"fmt"
 	"log/slog"
+	"time"
 )
 
 // Command represents a command which can be Sent() to the LWL
@@ -10,6 +11,7 @@ type Command struct {
 	cmd        string              // Format string of transmitted command
 	opts       []any               // Format parameters of transmitted command
 	legacyOnly bool                // True if this command does NOT generate a JSON response
+	ttl        time.Duration       // How long to wait for a response from LWL
 	pkt        string              // Expected Response.Pkt
 	fn         string              // Expected Response.Fn
 	match      func(Response) bool // Custom IsResponse implementation, optional
@@ -21,8 +23,8 @@ type Command struct {
 // status of a specific device takes a device id as a parameter. They are also
 // used to match responses, e.g. detecting a status message from a specific
 // device.
-func (c *Command) New(opts ...any) *Command {
-	out := c
+func (c *Command) New(opts ...any) Command {
+	out := *c // Dereference, then copy
 	out.opts = opts
 	return out
 }
@@ -74,7 +76,7 @@ func (c *Command) IsResponse(r Response) bool {
 // If already paired:
 //
 //	<-: 3,?V="N2.94D"\r\n
-var CmdRegister = Command{cmd: "!F*p", legacyOnly: true}
+var CmdRegister = Command{cmd: "!F*p", legacyOnly: true, ttl: time.Microsecond * 300}
 
 // CmdDeregister will unpair the current LAN host from LWL (only works when
 // already paired)
@@ -89,7 +91,7 @@ var CmdDeregister = Command{cmd: "!F*xP", legacyOnly: true}
 //	->: 3,@H
 //	<-: *!{"trans":19686,"mac":"20:3B:85","time":1767795878,"pkt":"system","fn":"hubCall","type":"hub","prod":"lwl","fw":"N2.94D","uptime":3300881,"timeZone":0,"lat":52.18,"long":0.21,"tmrs":1,"evns":5,"run":0,"macs":1,"ip":"192.168.4.71","devs":11}
 //	<-: 3,OK\n
-var CmdHubCall = Command{cmd: "@H", fn: "hubCall"}
+var CmdHubCall = Command{cmd: "@H", fn: "hubCall", ttl: 300 * time.Millisecond}
 
 // CmdHubDuskDawn finds when dusk and dawn time values used by timers
 //
@@ -262,7 +264,7 @@ var CmdUnpairDevice = Command{cmd: "!%sF*xU"}
 //	->: 5,@R
 //	<-: *!{"trans":20021,"mac":"20:3B:85","time":1767830010,"pkt":"room","fn":"summary","stat0":255,"stat1":7,"stat2"90 "stat3":0,"stat4":0,"stat5":0,"stat6":0,"stat7":0,"stat8":0,"stat9":0}
 //	<-: 5,OK\n
-var CmdQueryRadiators = Command{cmd: "@R", pkt: "room", fn: "summary"}
+var CmdQueryRadiators = Command{cmd: "@R", pkt: "room", fn: "summary", ttl: 1500 * time.Millisecond}
 
 // CmdQueryRadiator instructs a specific radiator to report its product
 // information. Args:
@@ -274,4 +276,4 @@ var CmdQueryRadiators = Command{cmd: "@R", pkt: "room", fn: "summary"}
 //	->: 13,@?R8
 //	<-: *!{"trans":20073,"mac":"20:3B:85","time":1767831552,"pkt":"room","fn":"read","slot":8,"serial":"6E8002","prod":"valve"}
 //	<-: 13,OK\n
-var CmdQueryRadiator = Command{cmd: "@?%s", pkt: "room", fn: "read"}
+var CmdQueryRadiator = Command{cmd: "@?%s", pkt: "room", fn: "read", ttl: 1000 * time.Millisecond}
