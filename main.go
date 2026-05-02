@@ -230,17 +230,13 @@ func main() {
 	}
 	slog.Info("HubCall", "response", &r)
 
-	// HACK: Remove this once we work out why R1 (stairs) never responds first time
-	r, err = c.Do(ctx, lwl.CmdQueryRadiator.New("R1"))
-	if err != nil {
-		slog.Error("Query R1 failed", "err", err)
-	}
-	slog.Info("Query R1", "response", &r)
-
-	err = c.QueryAllRadiators(ctx)
-	if err != nil {
-		slog.Error("QueryAllRadiators failed", "err", err)
-	}
+	go func() {
+		slog.Info("QueryAllRadiators() start")
+		err = c.QueryAllRadiators(ctx)
+		if err != nil {
+			slog.Error("QueryAllRadiators failed", "err", err)
+		}
+	}()
 
 	slog.Info("Starting main loop")
 loop:

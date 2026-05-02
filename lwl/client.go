@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -178,6 +179,11 @@ func New() *Client {
 //
 // If the input sid is an empty string, one will be allocated.
 func (c *Client) Subscribe(sid string, chr chan Response, chs chan string) string {
+	_, file, line, ok := runtime.Caller(1)
+	if !ok {
+		panic("I don't know what I am doing")
+	}
+	slog.Debug("Subscribe", "file", file, "line", line, "chr", chr, "chs", chs)
 	if len(sid) == 0 {
 		sid = fmt.Sprintf("%d", c.sid.Add(1))
 	}
@@ -190,7 +196,17 @@ func (c *Client) Subscribe(sid string, chr chan Response, chs chan string) strin
 
 // Unsubscribe undoes Subscribe()
 func (c *Client) Unsubscribe(sid string) {
+	_, file, line, ok := runtime.Caller(1)
+	if !ok {
+		panic("I don't know what I am doing")
+	}
 	c.pendingLock.Lock()
+	slog.Debug("Unsubscribe",
+		"file", file,
+		"line", line,
+		"chr", c.pendingJSON[sid],
+		"chs", c.pendingLegacy[sid],
+	)
 	defer c.pendingLock.Unlock()
 	delete(c.pendingJSON, sid)
 	delete(c.pendingLegacy, sid)
@@ -410,7 +426,7 @@ func (c *Client) DoLegacy(payload Command) string {
 		return ""
 	case reply := <-chs:
 		return reply
-	case <-time.After(time.Second):
+	case <-time.After(defaultTimeout):
 		return ""
 	}
 }
@@ -474,6 +490,7 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 	case <-time.After(cmd.ttl):
 		slog.Debug("Do retry timeout", "ttl", cmd.ttl)
 		sid = c.Send(cmd, chr, chs)
+		defer c.Unsubscribe(sid)
 	}
 
 	return Response{}, nil
@@ -517,6 +534,7 @@ func (c *Client) EnsureRegistered() {
 			slog.Debug("Timeout. Resending pairing request")
 			// TODO: Retest this. It used to use sendRaw, but I changed it to use Send() with ttl
 			sid = c.Send(CmdRegister, chr, chs)
+			defer c.Unsubscribe(sid)
 			t.Reset(10 * time.Second) // LWL pairing ends after ~15s
 		}
 	}
@@ -525,8 +543,6 @@ func (c *Client) EnsureRegistered() {
 // QueryAllRadiators queries the LWL for a list of paired devices, then
 // requests the status of each.
 func (c *Client) QueryAllRadiators(ctx context.Context) error {
-	chr := make(chan Response, 10)
-	c.Subscribe("", chr, nil)
 	r, err := c.Do(ctx, CmdQueryRadiators)
 	if err != nil {
 		slog.Error("Failed to query radiators", "err", err)
