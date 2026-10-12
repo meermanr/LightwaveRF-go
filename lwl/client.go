@@ -62,14 +62,14 @@ type Response struct {
 	Time  int32  `json:"time"`  // Timestamp of the transaction in LWL "local" Unixtime (i.e. if Link is set to UTC+2, this time will be UNIX + (3600*2))
 
 	// errors
-	Pkt     string `json:"pkt"` // Packet. "system", "error", "433T" to indicate a 433MHz transmission (i.e. LWL to Device), or "868R" to indicate 868MHz radio being received
-	Fn      string `json:"fn"`  // Function. "error", "system", "on", "off", "dim", "fullLock", "manualLock", "unlock", "open", "close", "stop", "ledColour", "ledColourCycle", "allOff", "moodStore", "moodRecall", "read"
-	Payload string `json:"payload"`
+	Pkt     string          `json:"pkt"`     // Packet. "system", "error", "433T" to indicate a 433MHz transmission (i.e. LWL to Device), or "868R" to indicate 868MHz radio being received
+	Fn      string          `json:"fn"`      // Function. "error", "system", "on", "off", "dim", "fullLock", "manualLock", "unlock", "open", "close", "stop", "ledColour", "ledColourCycle", "allOff", "moodStore", "moodRecall", "read"
+	Payload json.RawMessage `json:"payload"` // Used by "type":"log" as int, but also "Not yet registered. See LightwaveLink" by "pkt":"error"
 
 	// pkt:433T (LWL stating that it is sending a command to a device via 433 MHz transmission)
-	Room  int    `json:"room"`  // The room number that the command was sent to, 0-80 (inc.)
-	Dev   string `json:"dev"`   // The device number that the command was sent to
-	Param string `json:"Param"` // Not in every packet. The parameter for the function, if the function requires a parameter (i.e. dim, mood slot)
+	Room  int32 `json:"room"`  // The room number that the command was sent to, 0-80 (inc.)
+	Dev   int32 `json:"dev"`   // The device number that the command was sent to
+	Param int32 `json:"Param"` // Not in every packet. The parameter for the function, if the function requires a parameter (i.e. dim, mood slot)
 
 	// type:link (e.g. !F*p)
 	Type     string `json:"type"`     // "link" or "unlink"
