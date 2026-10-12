@@ -1,4 +1,4 @@
-tshark --color -f 'port 9760 or port 9761' -Tfields -e ip.src -e data.text -o data.show_as_text:TRUE
+# tshark --color -f 'port 9760 or port 9761' -Tfields -e ip.src -e data.text -o data.show_as_text:TRUE
 192.168.4.200	2,!F*p
 192.168.4.71	2,?V="N2.94D"\r\n
 192.168.4.200	3,/home/alpine/.cache/go-build/a6/a6fb96cc699c406eb60ffdd0d6a2898471db8f31595084089ed986b813dd4398-d/LightwaveRF-go
@@ -34,7 +34,8 @@ tshark --color -f 'port 9760 or port 9761' -Tfields -e ip.src -e data.text -o da
 192.168.4.71	*!{"trans":19998,"mac":"20:3B:85","time":1767825483,"pkt":"system","fn":"hubCall","type":"hub","prod":"lwl","fw":"N2.94D","uptime":3330662,"timeZone":0,"lat":52.18,"long":0.21,"tmrs":1,"evns":5,"run":0,"macs":1,"ip":"192.168.4.71","devs":11}
 192.168.4.71	*!{"trans":19999,"mac":"20:3B:85","time":1767825499,"pkt":"868R","fn":"statusPush","prod":"valve","serial":"24C702","type":"temp","batt":3.02,"ver":58,"state":"man","cTemp":19.5,"cTarg":19.0,"output":0,"nTarg":17.0,"nSlot":"00:00","prof":3}
 192.168.4.71	*!{"trans":19999,"mac":"20:3B:85","time":1767825499,"pkt":"868R","fn":"statusPush","prod":"valve","serial":"24C702","type":"temp","batt":3.02,"ver":58,"state":"man","cTemp":19.5,"cTarg":19.0,"output":0,"nTarg":17.0,"nSlot":"00:00","prof":3}
-192.168.4.71	*!{"trans":20000,"mac":"20:3B:85","time":1767825611,"pkt":"868R","fn":"statusPush","prod":"valve","serial":"DBC302","type":"temp","batt":2.99,"ver":58,"state":"man","cTemp":16.5,"cTarg":17.0,"output":0,"nTarg":20.0,"nSlot":"05:00","prof":3}tshark --color -f 'port 9760 or port 9761' -Tfields -e ip.src -e data.text -o data.show_as_text:TRUE
+192.168.4.71	*!{"trans":20000,"mac":"20:3B:85","time":1767825611,"pkt":"868R","fn":"statusPush","prod":"valve","serial":"DBC302","type":"temp","batt":2.99,"ver":58,"state":"man","cTemp":16.5,"cTarg":17.0,"output":0,"nTarg":20.0,"nSlot":"05:00","prof":3}
+# tshark --color -f 'port 9760 or port 9761' -Tfields -e ip.src -e data.text -o data.show_as_text:TRUE
 192.168.4.200	2,!F*p
 192.168.4.71	2,?V="N2.94D"\r\n
 192.168.4.200	3,@L1
