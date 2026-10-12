@@ -160,11 +160,11 @@ func New() *Client {
 
 	c := Client{
 		addr: net.UDPAddr{
-			IP:   net.IPv4bcast,
+			IP:   net.IPv4bcast, // Initial address. Will be replaced with Unicast address when discovered
 			Port: lwlServerPort,
 		},
 		con:    con,
-		wakeUp: make(chan struct{}, 0), // Unbuffered
+		wakeUp: make(chan struct{}), // Unbuffered
 
 		pendingJSON:   make(map[string]chan Response),
 		pendingLegacy: make(map[string]chan string),
