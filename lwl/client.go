@@ -151,8 +151,68 @@ type Client struct {
 	latencyStats     map[string]*LatencyStats
 }
 
+// broadcastAddress returns the directed broadcast address of the subnet
+// (i.e. the network address with every host bit set to 1). There is no
+// stdlib equivalent, but it is just the IP ORed with the inverted mask.
+//
+// IPv4 only: IPv6 has no broadcast, so we fall back to 255.255.255.255
+// (a perfectly fine discovery target, and what the kernel already chose).
+func broadcastAddress(ipnet *net.IPNet) net.IP {
+	if ipnet == nil {
+		return net.IPv4bcast
+	}
+	ip4 := ipnet.IP.To4()
+	mask4 := net.IP(ipnet.Mask).To4() // IPMask has no To4()
+	if ip4 == nil || mask4 == nil {
+		return net.IPv4bcast
+	}
+	bc := make(net.IP, 4)
+	for i := range bc {
+		bc[i] = ip4[i] | ^mask4[i]
+	}
+	return bc
+}
+
 // New returns a Client
 func New() *Client {
+	// Construct local broadcast address, macOS is infuriating
+	probe, err := net.DialUDP("udp4", nil, &net.UDPAddr{IP: net.IPv4bcast, Port: lwlClientPort})
+	if err != nil {
+		panic(err)
+	}
+
+	myIP := probe.LocalAddr().(*net.UDPAddr).IP
+
+	err = probe.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		panic(err)
+	}
+
+	var myNet net.IP
+	for _, iface := range ifaces {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			println("wtf? iface.Addrs() is useless")
+		}
+		for _, addr := range addrs {
+			// Match by exact address rather than Contains(): the default route
+			// (0.0.0.0/0) appears in Addrs() and would match everything
+			if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.Equal(myIP) {
+				myNet = broadcastAddress(ipnet)
+				break
+			}
+		}
+	}
+
+	if len(myNet) == 0 {
+		panic("Unable to determine local broadcast address!")
+	}
+
 	con, err := net.ListenUDP("udp4", &net.UDPAddr{Port: lwlClientPort})
 	if err != nil {
 		panic(err)
@@ -160,7 +220,7 @@ func New() *Client {
 
 	c := Client{
 		addr: net.UDPAddr{
-			IP:   net.IPv4bcast, // Initial address. Will be replaced with Unicast address when discovered
+			IP:   myNet, // Initial broadcast address. Replaced with unicast when discovered
 			Port: lwlServerPort,
 		},
 		con:    con,
