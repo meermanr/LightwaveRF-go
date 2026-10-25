@@ -548,14 +548,14 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 
 	select {
 	case msg := <-chs:
-		slog.Debug("Do", "msg", &msg)
+		slog.Debug("Do <-chs", "msg", &msg)
 		if strings.TrimSpace(msg) != "OK" {
 			return Response{}, fmt.Errorf("unexpected (legacy) response to command: %s", msg)
 		}
 	case r := <-chr:
-		slog.Debug("Do", "r", &r)
+		slog.Debug("Do <-chr", "r", &r)
 		if cmd.IsResponse(r) {
-			slog.Debug("Do", "r", &r)
+			slog.Debug("Do.IsResponse", "rtt", time.Since(start), "r", &r)
 			c.sampleCommandLatency(cmd, time.Since(start))
 			return r, nil
 		}
