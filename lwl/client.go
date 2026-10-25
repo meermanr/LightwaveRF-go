@@ -47,7 +47,7 @@ func (e errNotJSON) Error() string {
 //	*!{"trans":14819,"mac":"20:3B:85","time":1767307528,"pkt":"room","fn":"read","slot":10,"serial":"D88002","prod":"valve"}
 //	*!{"trans":93136,"mac":"20:3B:85","time":1776726001,"pkt":"868R","fn":"statusPush","prod":"valve","serial":"24C702","type":"temp","batt":3.03,"ver":58,"state":"run","cTemp":19.4,"cTarg":19.0,"output":0,"nTarg":17.0,"nSlot":"00:00","prof":1}
 //
-// FIXME: Payload is sometimes a number, othertimes a string!
+// NOTE: Payload is sometimes a number, othertimes a string!
 //
 //	*!{"trans":93150,"mac":"20:3B:85","time":1776726215,"pkt":"868R","fn":"ack","status":"success","attempts":1,"packet":208,"type":"log","payload":208}
 //
@@ -292,6 +292,10 @@ lwl.Client(
 // Listen captures traffic from the LWL and writes it to all subscribers
 func (c *Client) Listen() {
 	var b = make([]byte, 1024)
+	f, err := os.OpenFile("lwl.log", os.O_RDWR|os.O_CREATE, 0o777)
+	if err != nil {
+		panic(err)
+	}
 	for {
 		i, addr, err := c.con.ReadFromUDP(b)
 		if err != nil {
@@ -302,6 +306,16 @@ func (c *Client) Listen() {
 		}
 
 		msg := string(b[:i])
+		_, err = f.Write(b[:i])
+		if err != nil {
+			panic(err)
+		}
+		if b[i] != '\n' {
+			_, err := f.WriteString("\n")
+			if err != nil {
+				panic(err)
+			}
+		}
 
 		if errJSON := c.handleJSON(msg); errJSON != nil {
 			if _, ok := errJSON.(errNotJSON); ok {
