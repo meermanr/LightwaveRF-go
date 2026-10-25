@@ -146,17 +146,17 @@ var CmdSetDimmer = Command{cmd: "!%sFdP%d"}
 // CmdOpen Opens a relay (no connection). Args:
 //
 //   - string  Room+Device identifier, e.g. R1D1
-var CmdOpen = Command{cmd: "!%sF("}
+var CmdOpen = Command{cmd: "!%sF(", fn: "open", ttl: time.Millisecond * 40}
 
 // CmdClose Closes a relay (make a connection). Args:
 //
 //   - string  Room+Device identifier, e.g. R1D1
-var CmdClose = Command{cmd: "!%sF)"}
+var CmdClose = Command{cmd: "!%sF)", fn: "close", ttl: time.Millisecond * 40}
 
 // CmdStop Stops a relay (?). Args:
 //
 //   - string  Room+Device identifier, e.g. R1D1
-var CmdStop = Command{cmd: "!%sF^"}
+var CmdStop = Command{cmd: "!%sF^", fn: "stop", ttl: time.Millisecond * 40}
 
 // CmdLEDColourSet sets the colour of an LED colour changing product. Args:
 //
