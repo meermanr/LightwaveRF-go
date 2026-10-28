@@ -26,6 +26,10 @@ type Command struct {
 func (c *Command) New(opts ...any) Command {
 	out := *c // Dereference, then copy
 	out.opts = opts
+	if out.ttl == 0 {
+		// Default
+		out.ttl = 10 * time.Second
+	}
 	return out
 }
 
@@ -76,7 +80,7 @@ func (c *Command) IsResponse(r Response) bool {
 // If already paired:
 //
 //	<-: 3,?V="N2.94D"\r\n
-var CmdRegister = Command{cmd: "!F*p", legacyOnly: true, ttl: time.Microsecond * 300}
+var CmdRegister = Command{cmd: "!F*p", legacyOnly: true, ttl: time.Microsecond * 3000}
 
 // CmdDeregister will unpair the current LAN host from LWL (only works when
 // already paired)
@@ -156,7 +160,13 @@ var CmdClose = Command{cmd: "!%sF)", fn: "close", ttl: time.Millisecond * 40}
 // CmdStop Stops a relay (?). Args:
 //
 //   - string  Room+Device identifier, e.g. R1D1
-var CmdStop = Command{cmd: "!%sF^", fn: "stop", ttl: time.Millisecond * 40}
+//
+// Sample data:
+//
+//	->: 36,!R5D1F^
+//	<-: *!{"trans":5998,"mac":"20:3B:85","time":1793145105,"pkt":"433T","fn":"stop","room":5,"dev":1}
+//	<-: 36,OK\n
+var CmdStop = Command{cmd: "!%sF^", fn: "stop", ttl: 10 * time.Second}
 
 // CmdLEDColourSet sets the colour of an LED colour changing product. Args:
 //
@@ -264,7 +274,7 @@ var CmdUnpairDevice = Command{cmd: "!%sF*xU"}
 //	->: 5,@R
 //	<-: *!{"trans":20021,"mac":"20:3B:85","time":1767830010,"pkt":"room","fn":"summary","stat0":255,"stat1":7,"stat2"90 "stat3":0,"stat4":0,"stat5":0,"stat6":0,"stat7":0,"stat8":0,"stat9":0}
 //	<-: 5,OK\n
-var CmdQueryRadiators = Command{cmd: "@R", pkt: "room", fn: "summary", ttl: 1500 * time.Millisecond}
+var CmdQueryRadiators = Command{cmd: "@R", pkt: "room", fn: "summary", ttl: 10 * time.Second}
 
 // CmdQueryRadiator instructs a specific radiator to report its product
 // information. Args:
@@ -276,4 +286,59 @@ var CmdQueryRadiators = Command{cmd: "@R", pkt: "room", fn: "summary", ttl: 1500
 //	->: 13,@?R8
 //	<-: *!{"trans":20073,"mac":"20:3B:85","time":1767831552,"pkt":"room","fn":"read","slot":8,"serial":"6E8002","prod":"valve"}
 //	<-: 13,OK\n
-var CmdQueryRadiator = Command{cmd: "@?%s", pkt: "room", fn: "read", ttl: 1000 * time.Millisecond}
+var CmdQueryRadiator = Command{cmd: "@?%s", pkt: "room", fn: "read", ttl: 10 * time.Second}
+
+// Sample data (failure):
+//
+//	->: 23,!R7F*r
+//	<-: *!{"trans":5766,"mac":"20:3B:85","time":1793143790,"pkt":"868T","fn":"getStatus","room":7,"packet":127}
+//	<-: 23,OK\n
+//	<-: *!{"trans":5767,"mac":"20:3B:85","time":1793143799,"pkt":"868R","fn":"ack","status":"fail","packet":127}
+//
+// and sample success:
+//
+// ->: 19,!R6F*r
+// <-: *!{"trans":5757,"mac":"20:3B:85","time":1793143768,"pkt":"868T","fn":"getStatus","room":6,"packet":125}
+// <-: 19,OK\n
+// ->: 20,!R6F*r
+// <-: *!{"trans":5761,"mac":"20:3B:85","time":1793143778,"pkt":"868T","fn":"getStatus","room":6,"packet":126}
+// ->: 21,@?R7
+// <-: *!{"trans":5762,"mac":"20:3B:85","time":1793143780,"pkt":"868R","fn":"statusOn","prod":"valve","serial":"24C702","type":"temp","batt":3.12,"ver":58,"state":"man","cTemp":20.0,"cTarg":19.0,"output":0,"nTarg":17.0,"nSlot":"00:00","prof":2}
+// <-: *!{"trans":5763,"mac":"20:3B:85","time":1793143780,"pkt":"868R","fn":"ack","status":"success","attempts":1,"packet":126,"type":"log","payload":126}
+// <-: *!{"trans":5764,"mac":"20:3B:85","time":1793143780,"pkt":"room","fn":"read","slot":7,"serial":"67C702","prod":"valve"}
+// <-: *!{"trans":5765,"mac":"20:3B:85","time":1793143780,"pkt":"868R","fn":"statusPush","prod":"valve","serial":"24C702","type":"temp","batt":3.12,"ver":58,"state":"man","cTemp":20.0,"cTarg":19.0,"output":0,"nTarg":17.0,"nSlot":"00:00","prof":2}
+var CmdQueryRadiatorStatus = Command{cmd: "!%sF*r", fn: "statusOn"}
+
+// CmdRadiatorSetMode instructs a specific radiator to enter a given mode. Args:
+//
+//   - string  Room identifier, e.g. R1
+//   - int32   Mode, 0-5 (inc.)
+//
+// Valid modes:
+//
+//   - 0    Standby Mode
+//   - 1    Running Mode
+//   - 2    Away Mode
+//   - 3    Frost Mode
+//   - 4    Constant Mode
+//   - 5,Y  Holiday Mode. Y is used to define the number of days the Thermostat
+//     should enter Holiday mode for. !R_F*mP5,7 would result in Holiday
+//     mode getting set for 7 days
+//
+// Sample data:
+//
+//	->: 8,!R1F*mP1
+//	<-: *!{"trans":5321,"mac":"20:3B:85","time":1793137476,"pkt":"868T","fn":"heatingFunction","room":1,"mode":1,"param":0,"packet":71}
+//	<-: 8,OK\n
+var CmdRadiatorSetMode = Command{cmd: "!%sF*mP%d"}
+
+// Remove "Call For Heat" parent device (i.e. switch which controls heating for
+// one or more downstream "child" devices).
+//
+//   - string  Room identifier, e.g. R1
+//
+// Sample data:
+//
+//	->: 8,!R2F*D
+//	<-: 8,OK\n
+var CmdDeleteCallForHeat = Command{cmd: "!%sF*D"}

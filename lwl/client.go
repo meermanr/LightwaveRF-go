@@ -25,7 +25,7 @@ const lwlClientPort = 9761 // ... and listen for responses on this one
 // Typical response time is ~25-30ms (from WriteToUDP() returning to c.Listen()
 // picking up a JSON response), but the LWL seems to be unable to process
 // requests faster than every 100ms.
-var defaultTimeout = 3 * time.Second
+var defaultTimeout = 300 * time.Millisecond
 
 type errNotJSON struct {
 	msg string
@@ -63,7 +63,7 @@ type Response struct {
 
 	// errors
 	Pkt     string          `json:"pkt"`     // Packet. "system", "error", "433T" to indicate a 433MHz transmission (i.e. LWL to Device), or "868R" to indicate 868MHz radio being received
-	Fn      string          `json:"fn"`      // Function. "error", "system", "on", "off", "dim", "fullLock", "manualLock", "unlock", "open", "close", "stop", "ledColour", "ledColourCycle", "allOff", "moodStore", "moodRecall", "read"
+	Fn      string          `json:"fn"`      // Function. "error", "system", "on", "off", "dim", "fullLock", "manualLock", "unlock", "open", "close", "stop", "ledColour", "ledColourCycle", "allOff", "moodStore", "moodRecall", "read", "statusPush"
 	Payload json.RawMessage `json:"payload"` // Used by "type":"log" as int, but also "Not yet registered. See LightwaveLink" by "pkt":"error"
 
 	// pkt:433T (LWL stating that it is sending a command to a device via 433 MHz transmission)
@@ -104,6 +104,14 @@ type Response struct {
 	Stat7 uint8 `json:"stat7"` // Bitfile indicating which slows are in use. LSB=R57, MSB=R64
 	Stat8 uint8 `json:"stat8"` // Bitfile indicating which slows are in use. LSB=R65, MSB=R72
 	Stat9 uint8 `json:"stat9"` // Bitfile indicating which slows are in use. LSB=R73, MSB=R80
+
+	// fn:statusPush
+	//	*!{"trans":93136,"mac":"20:3B:85","time":1776726001,"pkt":"868R","fn":"statusPush","prod":"valve","serial":"24C702","type":"temp","batt":3.03,"ver":58,"state":"run","cTemp":19.4,"cTarg":19.0,"output":0,"nTarg":17.0,"nSlot":"00:00","prof":1}
+
+	Batt   float32 `json:"batt"`   // The battery level of the device. This is measured in volts. The battery powered products use 2x 1.5V AA batteries and will report in 3V or greater for a full battery. If the reading is less than 2.40V, this can be considered a low battery.
+	CTemp  float32 `json:"cTemp"`  // The current temperature of the product in Celsius. Range 0.0 to 40.0 (inc.)
+	CTarg  float32 `json:"cTarg"`  // The current target temperature of the product in Celsius. Range 0.0 to 60.0 (inc.)
+	Output uint8   `json:"output"` // The current status of the product. For a valve, this represents the % open that the TRV is. For a Thermostat, 0 means that it has sent off to its child device, and 100 means that is has sent on to its child device. For an Electric Switch, 0 means that the product is off, while 1 means that the product is on
 
 	// Internal
 	json string // Original message, before it was decoded
@@ -436,7 +444,7 @@ func (c *Client) parseLegacy(msg string) (string, string, error) {
 	return sid, payload, nil
 }
 
-func (c *Client) sendRaw(msg string, ttl time.Duration) {
+func (c *Client) sendRaw(msg string) {
 	c.sendLock.Lock()
 	_, err := c.con.WriteToUDP([]byte(msg), &c.addr)
 	if err != nil {
@@ -445,13 +453,10 @@ func (c *Client) sendRaw(msg string, ttl time.Duration) {
 	slog.Debug("sendRaw", "msg", msg)
 	// Rate limit sending, to avoid collisions
 	go func() {
-		if ttl == 0 {
-			ttl = defaultTimeout
-		}
 		select {
 		case <-c.wakeUp:
 			slog.Debug("sendRaw wakeUp")
-		case <-time.After(ttl):
+		case <-time.After(defaultTimeout):
 			slog.Debug("sendRaw ttl")
 		}
 		c.sendLock.Unlock()
@@ -480,7 +485,7 @@ func (c *Client) Send(payload Command, chr chan Response, chs chan string) strin
 		c.Subscribe(sid, chr, chs)
 	}
 
-	c.sendRaw(msg, payload.ttl)
+	c.sendRaw(msg)
 
 	return sid
 }
@@ -546,28 +551,36 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 	// so start timing from when it returns.
 	start := time.Now()
 
-	select {
-	case msg := <-chs:
-		slog.Debug("Do <-chs", "msg", &msg)
-		if strings.TrimSpace(msg) != "OK" {
-			return Response{}, fmt.Errorf("unexpected (legacy) response to command: %s", msg)
+	for {
+		select {
+		case msg := <-chs:
+			// Legacy response which had a matching `sid` (already stripped)
+			slog.Debug("Do <-chs", "sid", sid, "msg", msg)
+			if strings.TrimSpace(msg) != "OK" {
+				return Response{}, fmt.Errorf("unexpected (legacy) response to command: %s", msg)
+			}
+			// TODO: Special handling for "legacy only" commands that don't return JSON
+			continue
+		case r := <-chr:
+			slog.Debug("Do <-chr", "r", &r)
+			// TODO: Need another IsSomething method to detect NACKs, e.g. CmdQueryRadiatorStatus failure path, also good to consume messages until ACK (requires buffering response until ACK/NACK is detected)
+			if cmd.IsResponse(r) {
+				slog.Debug("Do.IsResponse", "rtt", time.Since(start), "r", &r)
+				c.sampleCommandLatency(cmd, time.Since(start))
+				return r, nil
+			}
+			continue
+		case <-ctx.Done():
+			return Response{}, ctx.Err()
+		case <-time.After(cmd.ttl):
+			slog.Debug("Do retry timeout", "ttl", cmd.ttl)
+			sid = c.Send(cmd, chr, chs)
+			defer c.Unsubscribe(sid)
+			continue
 		}
-	case r := <-chr:
-		slog.Debug("Do <-chr", "r", &r)
-		if cmd.IsResponse(r) {
-			slog.Debug("Do.IsResponse", "rtt", time.Since(start), "r", &r)
-			c.sampleCommandLatency(cmd, time.Since(start))
-			return r, nil
-		}
-	case <-ctx.Done():
-		return Response{}, ctx.Err()
-	case <-time.After(cmd.ttl):
-		slog.Debug("Do retry timeout", "ttl", cmd.ttl)
-		sid = c.Send(cmd, chr, chs)
-		defer c.Unsubscribe(sid)
-	}
 
-	return Response{}, nil
+		return Response{}, nil
+	}
 }
 
 // EnsureRegistered checks if the LWL accepts commands from the current host,
@@ -644,12 +657,21 @@ func (c *Client) QueryAllRadiators(ctx context.Context) error {
 	slog.Info("Room summary", "rooms", &rooms)
 
 	for _, room := range rooms {
-		doCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		doCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
 		id := fmt.Sprintf("R%d", room)
 		cmd := CmdQueryRadiator.New(id)
 		r, err := c.Do(doCtx, cmd)
+		if err != nil {
+			slog.Warn("Invalid response", "cmd", &cmd, "err", err)
+			continue
+		}
+
+		slog.Info("Response", "cmd", &cmd, "r", &r)
+
+		cmd = CmdQueryRadiatorStatus.New(id)
+		r, err = c.Do(doCtx, cmd)
 		if err != nil {
 			slog.Warn("Invalid response", "cmd", &cmd, "err", err)
 			continue

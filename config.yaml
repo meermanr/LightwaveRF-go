@@ -9,28 +9,33 @@
 # Format:
 #
 #   $SERIAL_STR: $NAME_STR
+#   R${ROOM}D${DEVICE}: $NAME_STR
 #
 # Notes
 #
 #   1. Serial strings should all be 6 characters long, excluding quotes
 #   2. Serial strings which are only numbers should be enclosed in quotes
 #   3. Numeric serial strings which start with a zero MUST be quoted
+#   4. Non-heating equipment like the relay (jsjslw821) are denoted by their
+#      Room and Device number
 #
 # Examples
 #
-# 1A2B3C:Device with unquoted serial string
+# 1A2B3C: Device with unquoted serial string
 # '1A2B3C':Device with quoted serial string
 # '123456':Device with numeric serial string
 # '012345':Device with numeric serial string with leading zero
+# 'R5D1'  :Non-heating device in room 5, device 1
 
 24C702: Master bedroom
 47C702: Front door
 5FC502: Lounge
 67C702: Back bedroom
 6E8002: Sewing area
-9993FE: Boiler switch
+R05D01: Call for heat
 A08A02: Cat tree
 CB3FFE: Small bedroom
 D88002: Play area
 DBC302: Breakfast area
 DCC302: Stairs
+9993FE: Boiler Switch (removed)

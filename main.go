@@ -8,10 +8,11 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
+	"text/template"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/meermanr/LightwaveRF-go/lwl"
 
 	"github.com/MatusOllah/slogcolor"
@@ -88,8 +89,6 @@ func (c *config) write() (err error) {
 		slog.Debug("Not writing out config, as no new data to add", "fn", c.fn)
 		return nil
 	}
-
-	spew.Dump("newNames", newNames)
 
 	// Append missing names to YAML document
 	new_yaml_data, err := yaml.Marshal(newNames)
@@ -171,6 +170,86 @@ func (c *config) seen(status lwl.Response) string {
 	return name
 }
 
+var tmplTRVStatus = template.Must(template.New("TRV Status").Parse(`
+    batt: {{.Batt}}
+   cTarg: {{.CTarg}}
+   cTemp: {{.CTemp}}
+  output: {{.Output}}
+
+  JSON: {{.}}
+
+`))
+
+func (c *config) String() string {
+	bits := []string{}
+	buf := strings.Builder{}
+	for serial := range c.names {
+		name := c.names[serial]
+		buf.Reset()
+		if response, found := c.status[serial]; found {
+			err := tmplTRVStatus.Execute(&buf, response)
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			buf.WriteString("[no report]")
+		}
+		entry := fmt.Sprintf("%s:\n%s", name, buf.String())
+		bits = append(bits, entry)
+	}
+	report := strings.Join(bits, "\n")
+	return report
+}
+
+func CallForHeat(cfh string, wantHeat bool) lwl.Command {
+	// Check if id is a Room Device (i.e. relay, like JSJSLW821)
+	var room int
+	var dev int
+	n, err := fmt.Sscanf(cfh, "R%dD%d", &room, &dev)
+	if err != nil {
+		slog.Error("Error from fmt.Sscanf", "cfh", cfh, "err", err)
+	}
+
+	if n == 0 {
+		slog.Error("Not implemented: Call for heat devices other than relays (JSJSLW821)")
+		os.Exit(1)
+	}
+
+	// Normalise (e.g. R05D01 -> R1D5)
+	cfh = fmt.Sprintf("R%dD%d", room, dev)
+
+	var cmd lwl.Command
+	if wantHeat {
+		slog.Info("Calling for heat", "cfh", cfh)
+		cmd = lwl.CmdOpen.New(cfh)
+	} else {
+		cmd = lwl.CmdStop.New(cfh)
+		slog.Info("Calling for stop heat", "cfh", cfh)
+	}
+
+	return cmd
+}
+
+func stdinLines(ctx context.Context) <-chan string {
+	ch := make(chan string)
+	b := make([]byte, 1)
+	go func() {
+		defer close(ch)
+		for {
+			n, err := os.Stdin.Read(b)
+			if err != nil {
+				slog.Error("stdin read", "err", err)
+			}
+			select {
+			case ch <- string(b[:n]):
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return ch
+}
+
 func main() {
 	// Command line arguments
 	flag.Parse()
@@ -186,6 +265,10 @@ func main() {
 	slog.SetDefault(slog.New(slogcolor.NewHandler(os.Stderr, opts)))
 	slog.Debug("Debug messages look like this")
 
+	// Signal handling
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer stop()
+
 	// Config
 	conf := NewConfig()
 	if err := conf.load(configFile); err != nil {
@@ -198,6 +281,18 @@ func main() {
 	} else {
 		slog.Debug("Loaded configuration.", "fn", configFile)
 	}
+
+	cfh := ""
+	for id := range conf.names {
+		if conf.names[id] == "Call for heat" {
+			cfh = id
+			break
+		}
+	}
+	if cfh == "" {
+		panic("Configuration file lacks 'Call for heat' entry")
+	}
+	slog.Info("Call for heat device is", "cfh", cfh)
 
 	defer func() {
 		if err := conf.write(); err != nil {
@@ -218,11 +313,30 @@ func main() {
 		slog.Info("Deregister", "response", c.DoLegacy(lwl.CmdDeregister))
 	}
 
+	// // HACK: Start
+	// cmd := lwl.CmdQueryRadiatorStatus.New("R1")
+	// r, err := c.Do(ctx, cmd)
+	// slog.Info("HACK", "r", r, "err", err)
+	// // HACK: End
+	// os.Exit(0)
+
 	c.EnsureRegistered()
 
-	// Signal handling
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
-	defer stop()
+	// TODO: Respond to valve changes by calling for heat (.. or stopping)
+	//
+	// slog.Info("Testing relay controls")
+	// cmd := CallForHeat(cfh, false)
+	// r, err := c.Do(ctx, cmd)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// slog.Info("Response:", "r", r)
+	// cmd = CallForHeat(cfh, true)
+	// r, err = c.Do(ctx, cmd)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// slog.Info("Response:", "r", r)
 
 	r, err := c.Do(ctx, lwl.CmdHubCall)
 	if err != nil {
@@ -230,13 +344,21 @@ func main() {
 	}
 	slog.Info("HubCall", "response", &r)
 
+	// Run in background so we can process the responses too as we collect the
+	// temperatures and valve output of every TRV
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		slog.Info("QueryAllRadiators() start")
 		err = c.QueryAllRadiators(ctx)
 		if err != nil {
 			slog.Error("QueryAllRadiators failed", "err", err)
 		}
+		slog.Info("QueryAllRadiators() done")
 	}()
+
+	stdin := stdinLines(ctx)
 
 	slog.Info("Starting main loop")
 loop:
@@ -244,18 +366,48 @@ loop:
 		select {
 		case msg := <-msgs:
 			name := conf.seen(msg)
-			slog.Info("JSON Response", "name", name, "msg", &msg)
-		case <-time.After(10 * time.Second):
-			slog.Info("Timeout", "c", c, "c.Stats()", c.Stats())
-			err = conf.write()
-			if err != nil {
-				slog.Error("Failed to write out configuration file", "fn", configFile, "err", err)
-				return
+			slog.Info("conf.seen()", "name", name, "msg", &msg)
+			if lwl.CmdQueryRadiatorStatus.IsResponse(msg) {
+				slog.Info("Deciding if we need heat...")
+
+				// Decide if we want heating on or not
+				cout := 0 // Cumulative output
+				for serial := range conf.status {
+					state := conf.status[serial]
+					switch state.Fn {
+					case "statusOn", "statusPush":
+						cout += int(state.Output)
+					}
+				}
+				cmd := CallForHeat(cfh, cout > 0)
+				r, err = c.Do(ctx, cmd)
+				if err != nil {
+					slog.Error("Failed to set heating state", "err", err)
+				}
+				slog.Info("Response:", "r", r)
 			}
+
+		// TODO: Increase timeout (6h?)
+		// TODO: Check for stale TRV status, and request update
+		// TODO: Send alerts for unresponsive TRVs
+		// TODO: Low battery alerts
+		case <-time.After(1 * time.Hour):
+			slog.Info("Timeout", "c", c, "c.Stats()", c.Stats())
 
 		case <-ctx.Done():
 			slog.Info("Exiting due to signal")
 			break loop
+
+		case <-stdin:
+			// Display status
+			slog.Info("Current status", "c", c, "c.Stats()", c.Stats(), "conf", conf)
+
+		}
+
+		err = conf.write()
+		if err != nil {
+			slog.Error("Failed to write out configuration file", "fn", configFile, "err", err)
+			return
 		}
 	}
 }
