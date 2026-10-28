@@ -566,6 +566,8 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 			// TODO: Need another IsSomething method to detect NACKs, e.g. CmdQueryRadiatorStatus failure path, also good to consume messages until ACK (requires buffering response until ACK/NACK is detected)
 			if cmd.IsResponse(r) {
 				slog.Debug("Do.IsResponse", "rtt", time.Since(start), "r", &r)
+				// FIXME: Get this to measure from when the request was transmitted,
+				// not when it was queued for transmission
 				c.sampleCommandLatency(cmd, time.Since(start))
 				return r, nil
 			}
