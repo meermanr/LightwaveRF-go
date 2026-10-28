@@ -367,7 +367,7 @@ loop:
 		case msg := <-msgs:
 			name := conf.seen(msg)
 			slog.Info("conf.seen()", "name", name, "msg", &msg)
-			if lwl.CmdQueryRadiatorStatus.IsResponse(msg) {
+			if strings.HasPrefix(msg.Fn, "status") {
 				slog.Info("Deciding if we need heat...")
 
 				// Decide if we want heating on or not
