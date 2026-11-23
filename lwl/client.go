@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -246,11 +245,11 @@ func New() *Client {
 //
 // If the input sid is an empty string, one will be allocated.
 func (c *Client) Subscribe(sid string, chr chan Response, chs chan string) string {
-	_, file, line, ok := runtime.Caller(1)
-	if !ok {
-		panic("I don't know what I am doing")
-	}
-	slog.Debug("Subscribe", "file", file, "line", line, "chr", chr, "chs", chs)
+	// _, file, line, ok := runtime.Caller(1)
+	// if !ok {
+	// 	panic("I don't know what I am doing")
+	// }
+	// slog.Debug("Subscribe", "file", file, "line", line, "chr", chr, "chs", chs)
 	if len(sid) == 0 {
 		sid = fmt.Sprintf("%d", c.sid.Add(1))
 	}
@@ -263,17 +262,17 @@ func (c *Client) Subscribe(sid string, chr chan Response, chs chan string) strin
 
 // Unsubscribe undoes Subscribe()
 func (c *Client) Unsubscribe(sid string) {
-	_, file, line, ok := runtime.Caller(1)
-	if !ok {
-		panic("I don't know what I am doing")
-	}
+	// _, file, line, ok := runtime.Caller(1)
+	// if !ok {
+	// 	panic("I don't know what I am doing")
+	// }
 	c.pendingLock.Lock()
-	slog.Debug("Unsubscribe",
-		"file", file,
-		"line", line,
-		"chr", c.pendingJSON[sid],
-		"chs", c.pendingLegacy[sid],
-	)
+	// slog.Debug("Unsubscribe",
+	// 	"file", file,
+	// 	"line", line,
+	// 	"chr", c.pendingJSON[sid],
+	// 	"chs", c.pendingLegacy[sid],
+	// )
 	defer c.pendingLock.Unlock()
 	delete(c.pendingJSON, sid)
 	delete(c.pendingLegacy, sid)
@@ -456,9 +455,9 @@ func (c *Client) sendRaw(msg string) {
 	go func() {
 		select {
 		case <-c.wakeUp:
-			slog.Debug("sendRaw wakeUp")
+			// slog.Debug("sendRaw wakeUp")
 		case <-time.After(defaultTimeout):
-			slog.Debug("sendRaw ttl")
+			// slog.Debug("sendRaw ttl")
 		}
 		c.sendLock.Unlock()
 	}()
@@ -556,17 +555,17 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 		select {
 		case msg := <-chs:
 			// Legacy response which had a matching `sid` (already stripped)
-			slog.Debug("Do <-chs", "sid", sid, "msg", msg)
+			// slog.Debug("Do <-chs", "sid", sid, "msg", msg)
 			if strings.TrimSpace(msg) != "OK" {
 				return Response{}, fmt.Errorf("unexpected (legacy) response to command: %s", msg)
 			}
 			// TODO: Special handling for "legacy only" commands that don't return JSON
 			continue
 		case r := <-chr:
-			slog.Debug("Do <-chr", "r", &r)
+			// slog.Debug("Do <-chr", "r", &r)
 			// TODO: Need another IsSomething method to detect NACKs, e.g. CmdQueryRadiatorStatus failure path, also good to consume messages until ACK (requires buffering response until ACK/NACK is detected)
 			if cmd.IsResponse(r) {
-				slog.Debug("Do.IsResponse", "rtt", time.Since(start), "r", &r)
+				// slog.Debug("Do.IsResponse", "rtt", time.Since(start), "r", &r)
 				c.sampleCommandLatency(cmd, time.Since(start))
 				return r, nil
 			}
@@ -574,7 +573,7 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 		case <-ctx.Done():
 			return Response{}, ctx.Err()
 		case <-time.After(cmd.ttl):
-			slog.Debug("Do retry timeout", "ttl", cmd.ttl)
+			// slog.Debug("Do retry timeout", "ttl", cmd.ttl)
 			sid = c.Send(cmd, chr, chs)
 			defer c.Unsubscribe(sid)
 			continue
