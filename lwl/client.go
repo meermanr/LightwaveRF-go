@@ -159,12 +159,11 @@ type Client struct {
 	latencyStats     map[string]*LatencyStats
 }
 
-// broadcastAddress returns the directed broadcast address of the subnet
-// (i.e. the network address with every host bit set to 1). There is no
-// stdlib equivalent, but it is just the IP ORed with the inverted mask.
+// broadcastAddress returns the IPv4 broadcast address for the given IP address
 //
-// IPv4 only: IPv6 has no broadcast, so we fall back to 255.255.255.255
-// (a perfectly fine discovery target, and what the kernel already chose).
+// Needed because macOS is stupid and annoying: attempting to broadcast to
+// 255.255.255.255 only transmits via some arbitrary network interface that has
+// nothing to do with the user's WiFi.
 func broadcastAddress(ipnet *net.IPNet) net.IP {
 	if ipnet == nil {
 		return net.IPv4bcast
@@ -329,17 +328,9 @@ func (c *Client) Listen() {
 			if _, ok := errJSON.(errNotJSON); ok {
 				// Not JSON
 
-				// Unblock sendRaw rate-limiter, because most common legacy message is
-				// "OK", which signals all JSON responses have been send (broadcast +
-				// unicast)
-				select {
-				case c.wakeUp <- struct{}{}:
-				default:
-					// Means sendRaw wasn't rate limited
-				}
-
 				// Try parsing as Legacy message
-				if errLegacy := c.handleLegacy(msg); errLegacy != nil {
+				payload, errLegacy := c.handleLegacy(msg)
+				if errLegacy != nil {
 					// Uh-ho. No idea what this is
 					slog.Warn("Unable to parse message as either JSON or Legacy:",
 						"msg", msg,
@@ -347,6 +338,16 @@ func (c *Client) Listen() {
 						"errLegacy", errLegacy,
 					)
 					continue // Abandon processing of this message
+				}
+				if payload == "OK" {
+					// Unblock sendRaw rate-limiter, because most common legacy message is
+					// "OK", which signals all JSON responses have been send (broadcast +
+					// unicast)
+					select {
+					case c.wakeUp <- struct{}{}:
+					default:
+						// Means sendRaw wasn't rate limited
+					}
 				}
 			} else {
 				// Was JSON, but invalid in some way
@@ -391,11 +392,11 @@ func (c *Client) handleJSON(msg string) error {
 
 // Legacy response
 // e.g. ERR,1,"Not yet registered. Send !F*p to register"
-func (c *Client) handleLegacy(msg string) error {
+func (c *Client) handleLegacy(msg string) (string, error) {
 	// Not JSON, maybe legacy response?
 	sid, payload, err := c.parseLegacy(msg)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Write message to legacy subscribers
@@ -409,7 +410,7 @@ func (c *Client) handleLegacy(msg string) error {
 		default:
 		}
 	}
-	return nil
+	return payload, nil
 }
 
 // Parse JSON response
@@ -566,8 +567,6 @@ func (c *Client) Do(ctx context.Context, cmd Command) (Response, error) {
 			// TODO: Need another IsSomething method to detect NACKs, e.g. CmdQueryRadiatorStatus failure path, also good to consume messages until ACK (requires buffering response until ACK/NACK is detected)
 			if cmd.IsResponse(r) {
 				slog.Debug("Do.IsResponse", "rtt", time.Since(start), "r", &r)
-				// FIXME: Get this to measure from when the request was transmitted,
-				// not when it was queued for transmission
 				c.sampleCommandLatency(cmd, time.Since(start))
 				return r, nil
 			}
