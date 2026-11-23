@@ -155,9 +155,19 @@ func NewConfig() *config {
 func (c *config) seen(status lwl.Response) string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if status.Serial == "" {
+
+	serial := status.Serial
+	if serial == "" {
+		// E.g. Relay that controls heat pump
+		// msg=*!{"trans":6791,"mac":"20:3B:85","time":1795472732,"pkt":"433T","fn":"open","room":5,"dev":1}
+		if status.Room != 0 && status.Dev != 0 {
+			serial = fmt.Sprintf("R%02dD%02d", status.Room, status.Dev)
+		}
+	}
+	if serial == "" {
 		return ""
 	}
+
 	name, found := c.names[status.Serial]
 	if !found {
 		name = "[New]"
@@ -313,30 +323,7 @@ func main() {
 		slog.Info("Deregister", "response", c.DoLegacy(lwl.CmdDeregister))
 	}
 
-	// // HACK: Start
-	// cmd := lwl.CmdQueryRadiatorStatus.New("R1")
-	// r, err := c.Do(ctx, cmd)
-	// slog.Info("HACK", "r", r, "err", err)
-	// // HACK: End
-	// os.Exit(0)
-
 	c.EnsureRegistered()
-
-	// TODO: Respond to valve changes by calling for heat (.. or stopping)
-	//
-	// slog.Info("Testing relay controls")
-	// cmd := CallForHeat(cfh, false)
-	// r, err := c.Do(ctx, cmd)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// slog.Info("Response:", "r", r)
-	// cmd = CallForHeat(cfh, true)
-	// r, err = c.Do(ctx, cmd)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// slog.Info("Response:", "r", r)
 
 	r, err := c.Do(ctx, lwl.CmdHubCall)
 	if err != nil {
@@ -346,10 +333,9 @@ func main() {
 
 	// Run in background so we can process the responses too as we collect the
 	// temperatures and valve output of every TRV
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	ch := make(chan struct{})
 	go func() {
-		defer wg.Done()
+		defer close(ch)
 		slog.Info("QueryAllRadiators() start")
 		err = c.QueryAllRadiators(ctx)
 		if err != nil {
@@ -367,6 +353,13 @@ loop:
 		case msg := <-msgs:
 			name := conf.seen(msg)
 			slog.Info("conf.seen()", "name", name, "msg", &msg)
+			select {
+			case <-ch:
+			default:
+				// QueryAllRadiators is still running, we don't yet have all the
+				// information available
+				continue
+			}
 			if strings.HasPrefix(msg.Fn, "status") {
 				slog.Info("Deciding if we need heat...")
 
@@ -384,7 +377,10 @@ loop:
 				if err != nil {
 					slog.Error("Failed to set heating state", "err", err)
 				}
-				slog.Info("Response:", "r", r)
+				// msg=*!{"trans":6791,"mac":"20:3B:85","time":1795472732,"pkt":"433T","fn":"open","room":5,"dev":1}
+				if r.Fn != "open" {
+					slog.Error("Unexpected response from call for heat device", "r", r)
+				}
 			}
 
 		// TODO: Increase timeout (6h?)
@@ -395,6 +391,7 @@ loop:
 			slog.Info("Timeout", "c", c, "c.Stats()", c.Stats())
 
 		case <-ctx.Done():
+			slog.Info("Current status", "c", c, "c.Stats()", c.Stats(), "conf", conf)
 			slog.Info("Exiting due to signal")
 			break loop
 
