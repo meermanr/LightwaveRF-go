@@ -168,15 +168,15 @@ func (c *config) seen(status lwl.Response) string {
 		return ""
 	}
 
-	name, found := c.names[status.Serial]
+	name, found := c.names[serial]
 	if !found {
 		name = "[New]"
-		c.names[status.Serial] = "name"
+		c.names[serial] = "name"
 	}
 	if c.status == nil {
 		c.status = make(map[string]lwl.Response)
 	}
-	c.status[status.Serial] = status
+	c.status[serial] = status
 	return name
 }
 
