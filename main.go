@@ -377,8 +377,9 @@ loop:
 				if err != nil {
 					slog.Error("Failed to set heating state", "err", err)
 				}
-				// msg=*!{"trans":6791,"mac":"20:3B:85","time":1795472732,"pkt":"433T","fn":"open","room":5,"dev":1}
-				if r.Fn != "open" {
+				// *!{"trans":6791,"mac":"20:3B:85","time":1795472732,"pkt":"433T","fn":"open","room":5,"dev":1}
+				// *!{"trans":7088,"mac":"20:3B:85","time":1795474798,"pkt":"433T","fn":"stop","room":5,"dev":1}
+				if r.Fn != "open" && r.Fn != "stop" {
 					slog.Error("Unexpected response from call for heat device", "r", r)
 				}
 			}
